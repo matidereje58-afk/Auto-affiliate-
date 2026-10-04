@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>STORMFALL — Battle Royale</title>
+<link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+<div id="app">
+  <canvas id="view"></canvas>
+
+  <!-- ===================== LOADING ===================== -->
+  <div id="loading" class="overlay">
+    <div class="load-box">
+      <div class="load-logo">STORMFALL</div>
+      <div class="load-bar"><div id="load-fill"></div></div>
+      <div id="load-text" class="load-text">Generating island…</div>
+    </div>
+  </div>
+
+  <!-- ===================== MAIN MENU ===================== -->
+  <div id="menu" class="overlay hidden">
+    <div class="menu-panel">
+      <h1 class="logo">STORMFALL</h1>
+      <p class="tag">100 players. One dropship. The storm does not wait.</p>
+
+      <div class="field">
+        <label for="opt-seed">Match seed</label>
+        <input id="opt-seed" type="number" value="1337" />
+      </div>
+      <div class="field">
+        <label for="opt-players">Lobby size</label>
+        <select id="opt-players">
+          <option value="20">20</option>
+          <option value="50" selected>50</option>
+          <option value="80">80</option>
+          <option value="100">100</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="opt-difficulty">Bot difficulty</label>
+        <select id="opt-difficulty">
+          <option value="0.35">Casual</option>
+          <option value="0.62" selected>Normal</option>
+          <option value="0.85">Hard</option>
+          <option value="0.97">Brutal</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="opt-quality">Graphics</label>
+        <select id="opt-quality">
+          <option value="high" selected>High</option>
+          <option value="low">Low</option>
+        </select>
+      </div>
+
+      <button id="btn-play" class="btn-primary">DEPLOY</button>
+
+      <div class="controls-grid">
+        <div><b>WASD</b> move</div>
+        <div><b>Mouse</b> look</div>
+        <div><b>LMB</b> shoot / harvest</div>
+        <div><b>RMB</b> aim</div>
+        <div><b>Space</b> jump / open parachute</div>
+        <div><b>Shift</b> sprint</div>
+        <div><b>C</b> crouch</div>
+        <div><b>B</b> build mode</div>
+        <div><b>R</b> reload</div>
+        <div><b>1-5</b> weapon slots</div>
+        <div><b>Q</b> pick up</div>
+        <div><b>E</b> interact</div>
+        <div><b>F</b> materials menu</div>
+        <div><b>Tab</b> inventory</div>
+        <div><b>M</b> map</div>
+        <div><b>Esc</b> pause</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== HUD ===================== -->
+  <div id="hud" class="hidden">
+    <!-- crosshair -->
+    <div id="crosshair"><span></span><span></span><span></span><span></span></div>
+
+    <!-- top: alive counter + storm timer -->
+    <div id="top-bar">
+      <div class="chip" id="alive-chip"><span id="alive-count">100</span><small>ALIVE</small></div>
+      <div class="chip" id="kills-chip"><span id="kill-count">0</span><small>KILLS</small></div>
+      <div class="chip wide" id="storm-chip">
+        <small id="storm-label">STORM EYE SHRINKS IN</small>
+        <span id="storm-timer">1:30</span>
+      </div>
+    </div>
+
+    <!-- storm / phase banner -->
+    <div id="phase-banner" class="hidden"></div>
+
+    <!-- killfeed -->
+    <div id="killfeed"></div>
+
+    <!-- damage vignette + direction indicators -->
+    <div id="dmg-vignette"></div>
+    <div id="hitmarker"></div>
+    <div id="dmg-dirs"></div>
+    <div id="crosshair-hostile"></div>
+
+    <!-- bottom-left: health / shield -->
+    <div id="vitals">
+      <div class="bar shield"><div id="shield-fill"></div><span id="shield-text">0</span></div>
+      <div class="bar health"><div id="health-fill"></div><span id="health-text">100</span></div>
+      <div id="consumables"></div>
+    </div>
+
+    <!-- bottom-right: minimap -->
+    <div id="minimap-wrap">
+      <canvas id="minimap" width="260" height="260"></canvas>
+      <div id="compass"><span>N</span><span>E</span><span>S</span><span>W</span></div>
+    </div>
+
+    <!-- bottom-centre: hotbar -->
+    <div id="hotbar"></div>
+
+    <!-- centre-bottom: build preview info -->
+    <div id="build-info" class="hidden"></div>
+
+    <!-- materials panel -->
+    <div id="materials" class="hidden">
+      <h4>Materials</h4>
+      <div id="mat-list"></div>
+    </div>
+
+    <!-- interact prompt -->
+    <div id="prompt" class="hidden"></div>
+
+    <!-- big map -->
+    <div id="bigmap" class="overlay hidden">
+      <canvas id="bigmap-canvas" width="820" height="820"></canvas>
+      <div class="bigmap-hint">M / Esc to close</div>
+    </div>
+
+    <!-- countdown before the storm closes -->
+    <div id="center-note" class="hidden"></div>
+  </div>
+
+  <!-- ===================== PAUSE ===================== -->
+  <div id="pause" class="overlay hidden">
+    <div class="menu-panel small">
+      <h2>PAUSED</h2>
+      <button id="btn-resume" class="btn-primary">RESUME</button>
+      <button id="btn-quit" class="btn-ghost">ABANDON MATCH</button>
+    </div>
+  </div>
+
+  <!-- ===================== RESULT ===================== -->
+  <div id="result" class="overlay hidden">
+    <div class="menu-panel">
+      <h1 id="result-title">#1 VICTORY</h1>
+      <p id="result-sub"></p>
+      <div id="result-stats"></div>
+      <button id="btn-again" class="btn-primary">PLAY AGAIN</button>
+      <button id="btn-menu" class="btn-ghost">MAIN MENU</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>

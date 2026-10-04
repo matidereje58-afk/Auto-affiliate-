@@ -901,12 +901,22 @@ def build_character(kind="hero_f", cloth="both", hair="bun", cloth_color=None,
 
     arm = build_armature(spec, "armature_" + kind)
     parts = [body, gear, hair_ob, eyes, iris, pupil, lids, brows]
+    inv = arm.matrix_world.inverted()
     for ob in parts:
+        ob.parent = arm
+        ob.matrix_parent_inverse = inv.copy()
+        mod = ob.modifiers.new("armature", "ARMATURE")
+        mod.object = arm
+        mod.use_vertex_groups = True
+        mod.use_bone_envelopes = False
+        skin_weights(ob, spec)
+        # deform before subdivision so weights act on the base mesh
         bpy.context.view_layer.objects.active = ob
         ob.select_set(True)
-        arm.select_set(True)
-        bpy.ops.object.parent_set(type="OBJECT", keep_transform=True)
-        skin_weights(ob, spec)
+        try:
+            bpy.ops.object.modifier_move_to_index(modifier=mod.name, index=0)
+        except RuntimeError:
+            pass
         ob.select_set(False)
     bpy.context.view_layer.objects.active = body
     body.select_set(True)
@@ -930,39 +940,41 @@ class Pose:
             pb.rotation_mode = "QUATERNION"
             pb.rotation_quaternion = (1, 0, 0, 0)
 
-    def _chain(self, name):
-        chain, pb = [], self.pose.bones[name]
-        acc = Matrix.Identity(3)
-        while pb:
-            chain.append((pb, acc.copy()))
-            if not pb.parent:
-                break
-            acc = (pb.parent.matrix.to_3x3()
-                   @ pb.parent.bone.matrix_local.to_3x3().inverted()) @ acc
-            pb = pb.parent
-        chain.reverse()
-        return chain
+    def _parent_chain(self, name):
+        """Accumulated parent transform (4x4) from the root down to `name`."""
+        pb = self.pose.bones[name]
+        acc = Matrix.Identity(4)
+        while pb.parent:
+            par = pb.parent
+            acc = par.matrix @ par.bone.matrix_local.inverted() @ acc
+            pb = par
+        return acc
 
     def aim(self, name, direction, roll=0.0):
+        bpy.context.view_layer.update()   # parent chains must be current
         pb = self.pose.bones[name]
         d = Vector(direction)
         if d.length < 1e-9:
             return
         d.normalize()
-        acc = self._chain(name)[0][1]
         ref = Vector((0, 1, 0)) if abs(d.z) > 0.9 else Vector((0, 0, 1))
         x = ref.cross(d)
         if x.length < 1e-6:
             x = Vector((1, 0, 0))
         x.normalize()
         z = x.cross(d)
-        R = Matrix((x, d, z)).transposed().to_3x3()
+        R = Matrix((x, d, z)).transposed().to_4x4()
         if roll:
-            R = R @ Matrix.Rotation(roll, 3, "Y")
-        B = pb.bone.matrix_local.to_3x3()
-        pb.rotation_quaternion = (acc.inverted() @ R @ B.inverted()).to_quaternion()
+            R = R @ Matrix.Rotation(roll, 4, "Y")
+        # pose.matrix = A @ B @ basis, so solve for the basis exactly
+        desired = Matrix.Translation(pb.bone.head_local) @ R
+        A = self._parent_chain(name)
+        basis = (A @ pb.bone.matrix_local).inverted() @ desired
+        pb.location = basis.translation
+        pb.rotation_quaternion = basis.to_quaternion()
 
     def rot(self, name, euler_deg=(0, 0, 0)):
+        bpy.context.view_layer.update()
         pb = self.pose.bones[name]
         pb.rotation_mode = "XYZ"
         pb.rotation_euler = tuple(math.radians(a) for a in euler_deg)
@@ -970,15 +982,25 @@ class Pose:
         pb.rotation_mode = "QUATERNION"
 
     def ik(self, root_name, mid_name, target, pole=(0, 1, 0), roll=0.0):
+        bpy.context.view_layer.update()
         b1, b2 = self.pose.bones[root_name], self.pose.bones[mid_name]
         S = b1.head.copy()
         l1 = (b1.head - b1.tail).length
         l2 = (b2.head - b2.tail).length
         T = Vector(target)
         raw = T - S
-        dist = min(max(raw.length, abs(l1 - l2) + 0.01), l1 + l2 - 0.005)
+        reach = raw.length
         d = raw.normalized() if raw.length > 1e-9 else Vector((0, 0, -1))
-        cos_a = (l1 * l1 + dist * dist - l2 * l2) / (2 * l1 * dist)
+        fold = abs(l1 - l2) + 0.012
+        if reach < fold:                      # too close: fold back on itself
+            self.aim(root_name, d, roll)
+            self.aim(mid_name, -d)
+            return
+        if reach > l1 + l2 - 0.008:           # out of reach: straighten towards it
+            self.aim(root_name, d, roll)
+            self.aim(mid_name, d)
+            return
+        cos_a = (l1 * l1 + reach * reach - l2 * l2) / (2 * l1 * reach)
         a = math.acos(max(-1.0, min(1.0, cos_a)))
         axis = d.cross(Vector(pole))
         if axis.length < 1e-6:
