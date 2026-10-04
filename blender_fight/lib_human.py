@@ -449,19 +449,19 @@ def body_parts(spec):
         # trapezius bridge: fuses the neck base into the deltoid, no shoulder shelf
         bridge = [
             (side * 0.020, 0.010, spec["neck_z"] - 0.048),
-            (side * 0.075, 0.004, spec["shoulder_z"] - 0.022),
-            (side * 0.135, 0.000, spec["shoulder_z"] - 0.032),
-            (side * 0.192, 0.000, spec["shoulder_z"] - 0.048),
+            (side * 0.075, 0.004, spec["shoulder_z"] - 0.010),
+            (side * 0.135, 0.000, spec["shoulder_z"] - 0.018),
+            (side * 0.192, 0.000, spec["shoulder_z"] - 0.028),
         ]
         parts.append(tube(bridge,
-                          [spec["neck_rx"] * 1.45, 0.056, 0.050, 0.038],
-                          [0.072, 0.080, 0.074, 0.048],
+                          [spec["neck_rx"] * 1.35, 0.046, 0.044, 0.044],
+                          [0.070, 0.084, 0.080, 0.064],
                           segs=18, sub=6, ref_normal=(0, 0, 1)))
 
         arm = [
-            (side * s * 0.99, 0, spec["shoulder_z"] - 0.030),
-            (side * s * 1.035, 0, spec["shoulder_z"] - 0.095),
-            (side * s * 1.055, 0.002, spec["shoulder_z"] - 0.155),
+            (side * s * 0.99, 0, spec["shoulder_z"] - 0.058),
+            (side * s * 1.035, 0, spec["shoulder_z"] - 0.118),
+            (side * s * 1.055, 0.002, spec["shoulder_z"] - 0.172),
             (side * s * 1.07, 0.004, spec["elbow_z"]),
             (side * s * 1.07, -0.004, spec["elbow_z"] - 0.105),
             (side * s * 1.06, -0.018, spec["wrist_z"]),
@@ -469,10 +469,10 @@ def body_parts(spec):
             (side * s * 1.04, -0.052, spec["wrist_z"] - 0.068),
             (side * s * 1.03, -0.062, spec["wrist_z"] - 0.092),
         ]
-        arx = [0.066, 0.074, spec["upperarm_r"] * 1.04,
+        arx = [0.068, 0.074, spec["upperarm_r"] * 1.04,
                spec["elbow_r"], spec["forearm_r"], spec["wrist_r"], spec["palm_rx"],
                spec["palm_rx"] * 0.96, spec["palm_rx"] * 0.74]
-        ary = [0.066, 0.074, spec["upperarm_r"] * 0.98,
+        ary = [0.068, 0.074, spec["upperarm_r"] * 0.98,
                spec["elbow_r"] * 0.96, spec["forearm_r"] * 0.90, spec["wrist_r"] * 0.88,
                spec["palm_ry"], spec["palm_ry"] * 0.94, spec["palm_ry"] * 0.70]
         parts.append(tube(arm, arx, ary, segs=18, sub=6, ref_normal=(1, 0, 0)))
@@ -610,7 +610,9 @@ def muscle_sculpt(obj, spec, strength=1.0):
             ((sgn * 0.058 * s, -0.100, chest + 0.030), (0.080, 0.055, 0.050), 0.012),
             ((sgn * 0.118 * s, 0.012, chest - 0.065), (0.055, 0.085, 0.110), 0.010),
             ((sgn * 0.055 * s, 0.038, sh - 0.012), (0.055, 0.070, 0.048), 0.009),
-            ((sgn * 0.155 * s, -0.005, sh - 0.032), (0.062, 0.062, 0.072), 0.008),
+            ((sgn * 0.160 * s, -0.010, sh - 0.055), (0.058, 0.060, 0.062), 0.007),
+            ((sgn * 0.130 * s, -0.020, sh - 0.042), (0.062, 0.075, 0.058), 0.011),
+            ((sgn * 0.070 * s, 0.000, sh - 0.006), (0.058, 0.072, 0.048), 0.009),
             ((sgn * 0.192 * s, -0.022, (sh + elb) * 0.5 + 0.03), (0.046, 0.048, 0.090), 0.009),
             ((sgn * 0.196 * s, -0.020, (elb + wri) * 0.5), (0.040, 0.040, 0.075), 0.005),
             ((sgn * (off + 0.010), -0.038, hip - 0.150), (0.070, 0.070, 0.135), 0.011),
