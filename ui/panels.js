@@ -7,7 +7,7 @@ import { prepareHtmlPreview } from './assets.js';
 import { openEditor } from './modals.js';
 
 export function createPanels({ onPreviewArtifact, toast }) {
-  const state = { files: [], selected: null, artifacts: [], log: [] };
+  const state = { files: [], selected: null, artifacts: [], log: [], activeTab: 'files' };
 
   /* ------------------------------------------------------------ workspace -- */
 
@@ -213,6 +213,7 @@ export function createPanels({ onPreviewArtifact, toast }) {
   }
 
   function switchTab(name) {
+    state.activeTab = name;
     document.querySelectorAll('.side-tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === name));
     document.querySelectorAll('.side-panel').forEach((p) => p.classList.toggle('active', p.dataset.panel === name));
   }

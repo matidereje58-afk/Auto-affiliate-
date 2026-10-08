@@ -273,6 +273,7 @@ async function send(textOverride) {
   $('#suggestions').style.display = 'none';
   input.value = '';
   autoResize();
+  if (isMobile()) input.blur();   // dismiss the on-screen keyboard so the answer is visible
   state.conv.messages.push({ role: 'user', content: text });
   addUserMessage(text);
   await runTurn();
@@ -290,6 +291,30 @@ function autoResize() {
   const input = $('#input');
   input.style.height = 'auto';
   input.style.height = Math.min(input.scrollHeight, 260) + 'px';
+}
+
+const isMobile = () => window.matchMedia('(max-width: 860px), (max-height: 520px) and (pointer: coarse)').matches;
+
+function openSide() {
+  document.body.classList.remove('side-hidden');
+  panels.switchTab(panels.state.activeTab || 'files');
+  if (isMobile()) $('#scrim').hidden = false;
+  $('#btnWorkspace').setAttribute('aria-expanded', 'true');
+}
+
+function closeSide() {
+  if (isMobile()) {
+    document.body.classList.add('side-hidden');
+    $('#scrim').hidden = true;
+  } else {
+    document.body.classList.add('side-hidden');
+  }
+  $('#btnWorkspace').setAttribute('aria-expanded', 'false');
+}
+
+function toggleSide() {
+  if (document.body.classList.contains('side-hidden')) openSide();
+  else closeSide();
 }
 
 function applyTheme(theme) {
@@ -324,7 +349,15 @@ function wireUi() {
     onWipe: async () => { await panels.refreshFiles(); panels.clearPreview(); panels.renderArtifacts(); },
   }));
   $('#btnTheme').addEventListener('click', () => applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'));
-  $('#btnWorkspace').addEventListener('click', () => document.body.classList.toggle('side-hidden'));
+  $('#btnWorkspace').addEventListener('click', toggleSide);
+  $('#btnSideClose').addEventListener('click', closeSide);
+  $('#scrim').addEventListener('click', closeSide);
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !$('#scrim').hidden) closeSide();
+  });
+  window.addEventListener('resize', () => {
+    if (!isMobile()) { $('#scrim').hidden = true; document.body.classList.remove('side-hidden'); }
+  });
   $('#btnEffort').addEventListener('click', () => {
     const order = ['low', 'medium', 'high'];
     const next = order[(order.indexOf(settings.data.reasoningEffort) + 1) % order.length];
@@ -383,6 +416,8 @@ async function boot() {
   settings.load();
   applyTheme(settings.data.theme || 'dark');
   wireUi();
+  // On phones the side panel starts closed so the chat gets the full width.
+  if (isMobile()) { document.body.classList.add('side-hidden'); $('#scrim').hidden = true; }
   refreshSettingsUi();
   $('#suggestions').style.display = '';
   renderWelcome((text) => { $('#input').value = text; send(); });

@@ -3,6 +3,11 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0a0d14" />
+<meta name="color-scheme" content="dark light" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="Atria Agent" />
 <title>Atria Agent — Browser Sandbox AI</title>
 <meta name="description" content="A powerful AI agent that runs an entire sandbox (Python + JavaScript + web access) inside your browser, powered by the Atria Dawn Preview model." />
 <link rel="manifest" href="manifest.webmanifest" />
@@ -39,11 +44,11 @@
     </div>
 
     <div class="topbar-actions">
-      <button class="icon-btn" id="btnNew" title="New conversation">＋</button>
-      <button class="icon-btn" id="btnHistory" title="Conversations">🕘</button>
-      <button class="icon-btn" id="btnTheme" title="Toggle theme">◐</button>
-      <button class="icon-btn" id="btnSettings" title="Settings">⚙</button>
-      <button class="icon-btn" id="btnWorkspace" title="Toggle workspace panel">▤</button>
+      <button class="icon-btn" id="btnNew" title="New conversation" aria-label="New conversation">+</button>
+      <button class="icon-btn" id="btnHistory" title="Conversations" aria-label="Conversations">🕘</button>
+      <button class="icon-btn" id="btnTheme" title="Toggle theme" aria-label="Toggle theme">◐</button>
+      <button class="icon-btn" id="btnSettings" title="Settings" aria-label="Settings">⚙</button>
+      <button class="icon-btn" id="btnWorkspace" title="Workspace, artifacts and activity" aria-label="Open side panel" aria-expanded="false">▤</button>
     </div>
   </header>
 
@@ -73,12 +78,13 @@
       </div>
     </section>
 
-    <aside class="side-col" id="sideCol">
+    <aside class="side-col" id="sideCol" aria-label="Workspace and activity">
       <div class="side-tabs" role="tablist">
         <button class="side-tab active" data-tab="files" role="tab">Workspace</button>
         <button class="side-tab" data-tab="artifacts" role="tab">Artifacts</button>
         <button class="side-tab" data-tab="plan" role="tab">Plan</button>
         <button class="side-tab" data-tab="log" role="tab">Activity</button>
+        <button class="icon-btn side-close" id="btnSideClose" aria-label="Close panel">✕</button>
       </div>
 
       <div class="side-panel active" data-panel="files">
@@ -122,6 +128,7 @@
   </footer>
 </div>
 
+<div class="scrim" id="scrim" hidden></div>
 <div class="modal-root" id="modalRoot" hidden></div>
 <div class="toasts" id="toasts"></div>
 <script type="module" src="app.js"></script>

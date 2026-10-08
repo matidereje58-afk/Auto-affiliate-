@@ -17,7 +17,8 @@
   --radius: 14px;
   --radius-sm: 9px;
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
-  --sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Noto Emoji";
   --shadow: 0 18px 40px -22px rgba(0, 0, 0, 0.9);
 }
 html[data-theme="light"] {
@@ -83,7 +84,7 @@ body {
 
 .icon-btn {
   appearance: none; border: 1px solid transparent; background: transparent; color: var(--text-dim);
-  width: 34px; height: 32px; border-radius: 9px; cursor: pointer; font-size: 14px;
+  width: 36px; height: 34px; border-radius: 9px; cursor: pointer; font-size: 15px;
   display: inline-flex; align-items: center; justify-content: center; transition: .15s;
 }
 .icon-btn:hover { background: rgba(255,255,255,.07); color: var(--text); border-color: var(--border); }
@@ -92,7 +93,7 @@ html[data-theme="light"] .icon-btn:hover { background: rgba(16,24,40,.06); }
 
 /* ---------- layout ---------- */
 .layout { flex: 1; display: flex; min-height: 0; }
-.chat-col { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.chat-col { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; }
 .side-col {
   width: 380px; flex: none; border-left: 1px solid var(--border); background: var(--bg-2);
   display: flex; flex-direction: column; min-height: 0;
@@ -100,7 +101,7 @@ html[data-theme="light"] .icon-btn:hover { background: rgba(16,24,40,.06); }
 body.side-hidden .side-col { display: none; }
 
 /* ---------- messages ---------- */
-.messages { flex: 1; overflow-y: auto; padding: 22px 0 10px; }
+.messages { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 22px 0 10px; -webkit-overflow-scrolling: touch; }
 .msg { max-width: 900px; margin: 0 auto 18px; padding: 0 22px; animation: fade .25s ease; }
 @keyframes fade { from { opacity: 0; transform: translateY(6px);} to { opacity: 1; transform: none;} }
 .msg-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
@@ -182,7 +183,7 @@ html[data-theme="light"] .msg-body code { background: rgba(16,24,40,.07); }
 .artifact-card .grow { flex: 1; }
 
 /* ---------- composer ---------- */
-.composer-wrap { padding: 6px 22px 12px; border-top: 1px solid var(--border); background: linear-gradient(0deg, var(--bg-2), transparent); }
+.composer-wrap { flex: none; padding: 6px 22px 12px; border-top: 1px solid var(--border); background: linear-gradient(0deg, var(--bg-2), transparent); }
 .suggestions { display: flex; gap: 8px; overflow-x: auto; padding: 6px 0 10px; max-width: 900px; margin: 0 auto; scrollbar-width: none; }
 .suggestions::-webkit-scrollbar { display: none; }
 .suggestion {
@@ -321,16 +322,132 @@ iframe.preview-frame { width: 100%; height: 70vh; border: 1px solid var(--border
 .card b { display: block; font-size: 13.5px; margin-bottom: 5px; }
 .card span { font-size: 12px; color: var(--text-faint); line-height: 1.5; }
 
+/* ---------- drawer scrim (mobile) ---------- */
+.scrim {
+  position: fixed; inset: 0; z-index: 55; background: rgba(2, 4, 9, .6);
+  backdrop-filter: blur(3px); animation: fade .18s ease;
+}
+.side-close { display: none; margin-left: 2px; align-self: center; flex: none; }
+.side-tabs { align-items: center; }
+
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.14); border-radius: 10px; border: 2px solid transparent; background-clip: content-box; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.24); background-clip: content-box; }
 ::-webkit-scrollbar-track { background: transparent; }
 
-@media (max-width: 900px) {
-  .side-col { position: fixed; right: 0; top: 0; bottom: 0; width: min(92vw, 400px); z-index: 60; box-shadow: -20px 0 50px -20px rgba(0,0,0,.8); }
-  .brand-text .tag, .topbar-center .model-chip { display: none; }
-  .msg, .composer-wrap { padding-left: 12px; padding-right: 12px; }
-  .statusbar #sbHint { display: none; }
+/* ================================ tablets ================================= */
+@media (max-width: 1100px) {
+  .side-col { width: 340px; }
+  .msg, .composer-wrap { padding-left: 16px; padding-right: 16px; }
 }
-#sbSandbox[data-state="loading"] { color: var(--warn); }
-#sbSandbox[data-state="error"] { color: var(--danger); }
+
+/* ================================ phones ================================== */
+@media (max-width: 860px), (max-height: 520px) and (pointer: coarse) {
+  body { overscroll-behavior: none; }
+
+  /* --- topbar: compact, thumb sized ------------------------------------- */
+  .topbar { gap: 8px; padding: 8px 10px; padding-top: max(8px, env(safe-area-inset-top)); }
+  .brand-text { display: none; }
+  .logo { width: 26px; height: 26px; }
+  .topbar-center { display: none; }
+  .topbar-actions { gap: 0; }
+  .icon-btn { width: 42px; height: 42px; font-size: 18px; border-radius: 11px; }
+  #btnNew { font-size: 24px; font-weight: 300; line-height: 1; }
+
+  /* --- chat ------------------------------------------------------------- */
+  .layout { position: relative; }
+  .msg { padding: 0 12px; margin-bottom: 14px; }
+  .msg-body { font-size: 15.5px; line-height: 1.6; }
+  .msg-actions { opacity: 1; }
+  .msg-head { margin-bottom: 4px; }
+  .msg-body pre { padding: 10px 12px; border-radius: 10px; }
+  .msg-body code { font-size: 12.5px; }
+  .welcome { margin-top: 2vh; padding: 0 14px; }
+  .welcome h1 { font-size: 23px; }
+  .welcome p { font-size: 14px; }
+  .cards { grid-template-columns: 1fr; }
+  .card { padding: 12px 13px; }
+
+  /* --- reasoning + tool cards ------------------------------------------ */
+  .reasoning summary, .tool-head { padding: 11px 12px; min-height: 44px; }
+  .plan-card, .artifact-card { padding: 11px 12px; }
+  .tool-body .tool-section pre { font-size: 11.5px; max-height: 260px; }
+
+  /* --- composer: sticky, clear of the keyboard -------------------------- */
+  .composer-wrap {
+    padding: 6px 10px calc(8px + env(safe-area-inset-bottom));
+    position: relative; z-index: 30;
+  }
+  .suggestions { padding: 4px 2px 8px; }
+  .suggestion { font-size: 12.5px; padding: 9px 14px; min-height: 38px; display: inline-flex; align-items: center; }
+  .composer textarea { font-size: 16px; padding: 12px 13px 6px; max-height: 34vh; }  /* 16px stops iOS zoom-on-focus */
+  .composer-row { padding: 2px 8px 8px; flex-wrap: nowrap; gap: 6px; align-items: center; }
+  .composer .icon-btn { min-width: 40px; height: 40px; font-size: 13px; flex: none; }
+  .composer-left { width: auto; }
+  .composer-right { width: auto; margin-left: auto; }
+  .btn { padding: 10px 16px; font-size: 14px; flex: none; white-space: nowrap; }
+  .btn.primary kbd, .hint { display: none; }
+  .usage-bar { display: none; }   /* tokens/steps live in the footer on phones */
+  .statusbar { min-height: 26px; align-items: center; }
+
+  /* --- side panel becomes a full-height drawer ------------------------- */
+  .side-col {
+    position: fixed; top: 0; right: 0; bottom: 0;
+    width: min(94vw, 420px); z-index: 60;
+    border-left: 1px solid var(--border-strong);
+    box-shadow: -24px 0 60px -24px rgba(0, 0, 0, .9);
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    overscroll-behavior: contain;
+    animation: drawer .2s ease;
+  }
+  @keyframes drawer { from { transform: translateX(8%); opacity: .6; } to { transform: none; opacity: 1; } }
+  .side-tabs { padding: 0 4px; }
+  .side-tab { padding: 14px 2px; font-size: 12px; min-height: 48px; }
+  .side-close { display: inline-flex; width: 40px; height: 40px; }
+  .side-toolbar { padding: 8px; gap: 6px; }
+  .mini { padding: 8px 12px; font-size: 12px; border-radius: 9px; }
+  .file-row { padding: 11px 10px; font-size: 13px; min-height: 44px; }
+  .file-preview { min-height: 30vh; }
+  .file-preview .prev-head { flex-wrap: wrap; font-size: 11.5px; }
+
+  /* --- footer: one short line ------------------------------------------ */
+  .statusbar { gap: 10px; font-size: 10.5px; padding: 4px 10px calc(4px + env(safe-area-inset-bottom)); }
+  .statusbar #sbModel, .statusbar #sbSteps, .statusbar #sbHint { display: none; }
+
+  /* --- modals go full screen ------------------------------------------- */
+  .modal-root { padding: 0; align-items: flex-end; }
+  .modal, .modal.wide {
+    width: 100%; max-width: 100%; max-height: 92vh; border-radius: 16px 16px 0 0;
+    border-left: none; border-right: none; border-bottom: none;
+  }
+  .modal-body { padding: 13px; }
+  .modal-head { padding: 12px 13px; }
+  .modal-foot { padding: 11px 13px calc(11px + env(safe-area-inset-bottom)); flex-wrap: wrap; }
+  .modal-foot .btn { flex: 1 1 40%; }
+  .field input, .field textarea, .field select { font-size: 16px; }
+  iframe.preview-frame { height: 62vh; }
+  .toasts { left: 10px; right: 10px; top: calc(58px + env(safe-area-inset-top)); bottom: auto; }
+  .toast { max-width: none; }
+}
+
+/* --- very small phones (iPhone SE) --------------------------------------- */
+@media (max-width: 380px) {
+  .msg-body { font-size: 15px; }
+  .tool-arg { display: none; }
+  .side-tab { font-size: 11px; }
+}
+
+/* --- landscape phones: keep the composer visible ------------------------- */
+@media (max-height: 480px) and (orientation: landscape) {
+  .welcome h1 { font-size: 20px; }
+  .composer textarea { max-height: 26vh; }
+  .statusbar { display: none; }
+}
+
+/* --- touch devices: roomier targets, no hover-only affordances ----------- */
+@media (hover: none) and (pointer: coarse) {
+  .icon-btn:hover, .mini:hover, .suggestion:hover, .card:hover { transform: none; }
+  .file-row, .tool-head { min-height: 44px; }
+  a, button { -webkit-tap-highlight-color: rgba(110, 231, 255, .18); }
+}
