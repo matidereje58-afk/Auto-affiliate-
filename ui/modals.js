@@ -5,6 +5,7 @@ import { settings, conversations, memory } from '../lib/store.js';
 import { ping } from '../agent/atria.js';
 import { vfs } from '../lib/vfs.js';
 import { renderMarkdown, highlightWithin } from './markdown.js';
+import { prepareHtmlPreview } from './assets.js';
 
 let root;
 
@@ -116,7 +117,7 @@ export function openSettings({ onSaved, onWipe } = {}) {
           e.target.textContent = 'cleared';
         } }),
         el('button', { class: 'mini', text: 'Reset settings', onclick: (e) => {
-          settings.save({ systemPrompt: '', reasoningEffort: 'medium', maxSteps: 25, maxTokens: 16384, temperature: null, enableSubagents: true, autoOpenArtifacts: true });
+          settings.save({ systemPrompt: '', reasoningEffort: 'low', maxSteps: 25, maxTokens: 16384, temperature: null, enableSubagents: true, autoOpenArtifacts: true });
           e.target.textContent = 'reset — reopen to see';
         } }),
       ]),
@@ -204,12 +205,16 @@ export async function openArtifact({ path, title }) {
   const isMd = /\.(md|markdown)$/i.test(path);
 
   let inner;
+  let assetUrls = [];
   if (isHtml) {
-    inner = el('iframe', {
+    const prepared = await prepareHtmlPreview(rec.text ?? '', path);
+    assetUrls = prepared.urls;
+    const frame = el('iframe', {
       class: 'preview-frame',
       sandbox: 'allow-scripts allow-forms allow-modals allow-popups allow-downloads',
-      src: blobUrl,
     });
+    frame.srcdoc = prepared.html;
+    inner = frame;
   } else if (isImg) {
     inner = el('img', { src: blobUrl, style: 'max-width:100%;border-radius:10px' });
   } else if (isMd) {
@@ -221,12 +226,37 @@ export async function openArtifact({ path, title }) {
   const foot = el('div', { class: 'modal-foot' }, [
     el('a', { class: 'btn small', href: blobUrl, download: path.split('/').pop(), text: 'Download' }),
     el('a', { class: 'btn small', href: blobUrl, target: '_blank', rel: 'noreferrer', text: 'Open in new tab' }),
+    el('button', { class: 'btn small', text: 'Edit file', onclick: () => { closeModal(); openEditor({ path, onSaved: () => {} }); } }),
     el('button', { class: 'btn primary small', text: 'Close', onclick: closeModal }),
   ]);
 
   openModal([header(title || path), el('div', { class: 'modal-body' }, [inner]), foot], { wide: true });
   if (isMd) highlightWithin(root);
-  setTimeout(() => URL.revokeObjectURL(blobUrl), 360000);
+  setTimeout(() => { URL.revokeObjectURL(blobUrl); assetUrls.forEach((u) => URL.revokeObjectURL(u)); }, 900000);
+}
+
+/* ------------------------------------------------------------------ editor -- */
+
+export async function openEditor({ path, onSaved }) {
+  const rec = await vfs.read(path);
+  if (!rec) return toast(`No such file: ${path}`, 'err');
+  if (rec.binary) return toast('Binary files cannot be edited here — ask the agent to rewrite it.', 'err');
+  const area = el('textarea', {
+    style: 'min-height:60vh;font-family:var(--mono);font-size:12.5px;line-height:1.5',
+    spellcheck: 'false',
+  });
+  area.value = rec.text ?? '';
+  const body = el('div', { class: 'modal-body' }, [area]);
+  const foot = el('div', { class: 'modal-foot' }, [
+    el('button', { class: 'btn small ghost', text: 'Cancel', onclick: closeModal }),
+    el('button', { class: 'btn primary small', text: 'Save file', onclick: async () => {
+      await vfs.write(path, area.value, { source: 'user' });
+      closeModal();
+      onSaved?.();
+      toast(`Saved ${path}.`, 'ok');
+    } }),
+  ]);
+  openModal([header(`Edit — ${path}`), body, foot], { wide: true });
 }
 
 /* ------------------------------------------------------------------ toast -- */

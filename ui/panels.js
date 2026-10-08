@@ -3,6 +3,8 @@
 import { $, el, fmtBytes, fmtTime, isImagePath } from '../lib/util.js';
 import { vfs } from '../lib/vfs.js';
 import { renderMarkdown, highlightWithin } from './markdown.js';
+import { prepareHtmlPreview } from './assets.js';
+import { openEditor } from './modals.js';
 
 export function createPanels({ onPreviewArtifact, toast }) {
   const state = { files: [], selected: null, artifacts: [], log: [] };
@@ -52,8 +54,9 @@ export function createPanels({ onPreviewArtifact, toast }) {
     box.append(el('div', { class: 'prev-head' }, [
       el('span', { text: path }),
       el('span', { style: 'color:var(--text-faint);font-family:var(--sans)', text: fmtBytes(rec.size) }),
-      el('button', { class: 'mini', style: 'margin-left:auto', text: 'Download', onclick: () => downloadFile(path) }),
-      path.endsWith('.html') ? el('button', { class: 'mini', text: 'Preview', onclick: () => onPreviewArtifact({ path, title: path }) }) : null,
+      el('button', { class: 'mini', style: 'margin-left:auto', text: 'Edit', onclick: () => openEditor({ path, onSaved: () => refreshFiles().then(() => previewFile(path)) }) }),
+      el('button', { class: 'mini', text: 'Download', onclick: () => downloadFile(path) }),
+      path.endsWith('.html') ? el('button', { class: 'mini', text: 'Open', onclick: () => onPreviewArtifact({ path, title: path }) }) : null,
     ]));
 
     if (isImagePath(path)) {
@@ -62,12 +65,15 @@ export function createPanels({ onPreviewArtifact, toast }) {
     } else if (rec.binary) {
       box.append(el('div', { class: 'empty', text: `Binary file (${rec.mime}, ${fmtBytes(rec.size)}). Inspect it with the agent's Python sandbox.` }));
     } else if (path.endsWith('.html')) {
-      box.append(el('iframe', {
+      const prepared = await prepareHtmlPreview(rec.text ?? '', path);
+      const frame = el('iframe', {
         class: 'preview-frame',
         style: 'height:340px',
         sandbox: 'allow-scripts allow-forms allow-modals allow-popups',
-        srcdoc: injectBase(rec.text ?? ''),
-      }));
+      });
+      frame.srcdoc = prepared.html;
+      box.append(frame);
+      setTimeout(() => prepared.urls.forEach((u) => URL.revokeObjectURL(u)), 300000);
     } else if (/\.(md|markdown)$/i.test(path)) {
       const div = el('div', { class: 'msg-body', html: renderMarkdown(rec.text ?? '') });
       box.append(div);
@@ -76,11 +82,6 @@ export function createPanels({ onPreviewArtifact, toast }) {
       box.append(el('pre', { text: (rec.text ?? '').slice(0, 60000) }));
     }
     document.querySelectorAll('.file-row').forEach((r) => r.classList.toggle('active', r.title === path));
-  }
-
-  function injectBase(html) {
-    if (/<base\s/i.test(html)) return html;
-    return html.replace(/<head([^>]*)>/i, '<head$1><base target="_blank">');
   }
 
   async function downloadFile(path) {

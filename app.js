@@ -139,6 +139,8 @@ function handleEvent(ev) {
     case 'step_start':
       if (!currentTurn) currentTurn = beginTurn();
       newStep(currentTurn);
+      state.usage.steps += 1;
+      updateUsage();
       setStatus(ev.step === 1 ? 'thinking' : `step ${ev.step}/${ev.maxSteps}`, 'thinking');
       break;
     case 'reasoning':

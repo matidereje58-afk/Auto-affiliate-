@@ -38,7 +38,7 @@ export async function streamChat(opts) {
       return await streamOnce({ body, apiKey, baseUrl, signal, onDelta });
     } catch (err) {
       lastErr = err;
-      if (err.name === 'AbortError') throw err;
+      if (err.name === 'AbortError' && !err.stalled) throw err;
       if (!isRetryable(err) || attempt >= 3) throw err;
       const wait = 700 * attempt + Math.random() * 400;
       onRetry?.({ attempt, error: err, wait });
@@ -49,25 +49,50 @@ export async function streamChat(opts) {
 }
 
 function isRetryable(err) {
+  if (err.stalled) return true;
   if (err.status === 429 || err.status === 408) return true;
   if (err.status >= 500) return true;
   if (err.status === undefined) return true; // network/timeout
   return false;
 }
 
-async function streamOnce({ body, apiKey, baseUrl, signal, onDelta }) {
-  const res = await fetch(`${baseUrl.replace(/\/+$/, '')}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-      Accept: 'text/event-stream',
-    },
-    body: JSON.stringify(body),
-    signal,
-  });
+async function streamOnce({ body, apiKey, baseUrl, signal, onDelta, idleTimeoutMs = 240000 }) {
+  const controller = new AbortController();
+  const onAbort = () => controller.abort();
+  signal?.addEventListener('abort', onAbort, { once: true });
+
+  // The provider can pause mid-stream; abort and let the caller retry instead of hanging forever.
+  let lastAt = Date.now();
+  let stalled = false;
+  const watchdog = setInterval(() => {
+    if (Date.now() - lastAt > idleTimeoutMs) {
+      stalled = true;
+      controller.abort();
+    }
+  }, 5000);
+
+  let res;
+  try {
+    res = await fetch(`${baseUrl.replace(/\/+$/, '')}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+        Accept: 'text/event-stream',
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+  } catch (e) {
+    clearInterval(watchdog);
+    signal?.removeEventListener('abort', onAbort);
+    if (stalled) { const err = new Error(`Atria API stalled for ${Math.round(idleTimeoutMs / 1000)}s`); err.stalled = true; throw err; }
+    throw e;
+  }
 
   if (!res.ok) {
+    clearInterval(watchdog);
+    signal?.removeEventListener('abort', onAbort);
     let detail = '';
     try { detail = (await res.text()).slice(0, 900); } catch {}
     let msg = detail;
@@ -81,6 +106,7 @@ async function streamOnce({ body, apiKey, baseUrl, signal, onDelta }) {
     e.status = res.status;
     e.detail = detail;
     if (res.status === 401) e.hint = 'Your Atria API key was rejected. Open Settings and paste a valid key.';
+    if (res.status === 422) e.hint = 'The endpoint rejected the request. Try reasoning effort "low" and a smaller max-tokens value.';
     throw e;
   }
 
@@ -91,22 +117,35 @@ async function streamOnce({ body, apiKey, baseUrl, signal, onDelta }) {
   const decoder = new TextDecoder();
   let buf = '';
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buf += decoder.decode(value, { stream: true });
-    const lines = buf.split('\n');
-    buf = lines.pop() ?? '';
-    for (const rawLine of lines) {
-      const line = rawLine.trim();
-      if (!line || line.startsWith(':')) continue;
-      if (!line.startsWith('data:')) continue;
-      const payload = line.slice(5).trim();
-      if (payload === '[DONE]') continue;
-      let json;
-      try { json = JSON.parse(payload); } catch { continue; }
-      consumeChunk(json, out, acc, onDelta);
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      lastAt = Date.now();
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop() ?? '';
+      for (const rawLine of lines) {
+        const line = rawLine.trim();
+        if (!line || line.startsWith(':')) continue;
+        if (!line.startsWith('data:')) continue;
+        const payload = line.slice(5).trim();
+        if (payload === '[DONE]') continue;
+        let json;
+        try { json = JSON.parse(payload); } catch { continue; }
+        consumeChunk(json, out, acc, onDelta);
+      }
     }
+  } catch (e) {
+    if (stalled) {
+      const err = new Error(`Atria API stalled (no data for ${Math.round(idleTimeoutMs / 1000)}s)`);
+      err.stalled = true;
+      throw err;
+    }
+    throw e;
+  } finally {
+    clearInterval(watchdog);
+    signal?.removeEventListener('abort', onAbort);
   }
 
   out.toolCalls = [...acc.values()].filter((t) => t.name || t.arguments);
