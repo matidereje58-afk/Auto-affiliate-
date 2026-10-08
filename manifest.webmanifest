@@ -1,0 +1,12 @@
+{
+  "name": "Atria Agent",
+  "short_name": "Atria Agent",
+  "description": "A powerful AI agent that runs a Python + JavaScript sandbox, workspace and web access inside your browser.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0a0d14",
+  "theme_color": "#6ee7ff",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

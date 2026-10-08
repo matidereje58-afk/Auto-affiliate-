@@ -1,0 +1,24 @@
+{
+  "name": "atria-agent",
+  "version": "1.0.0",
+  "description": "A powerful AI agent that runs a Python + JS sandbox, workspace and web access in the browser, powered by Atria Dawn Preview.",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/matidereje58-afk/Auto-affiliate-.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/matidereje58-afk/Auto-affiliate-/issues"
+  },
+  "homepage": "https://github.com/matidereje58-afk/Auto-affiliate-#readme",
+  "dependencies": {
+    "playwright": "^1.49.1"
+  }
+}
