@@ -48,6 +48,27 @@ I researched the obvious plays before choosing. Here is what the evidence said �
 
 **The one-line reason:** it is the only candidate where **RPM is top-tier, the audience is adults in Tier-1 countries, every unit of acquisition produces 100+ pageviews, and the marginal cost is zero.**
 
+### 2.1 The independent demand evidence (mine, not vibes)
+
+I mined **1,407 Google-autocomplete query sets → 10,872 unique suggestions** (`research/whitespace.md`, raw JSON in `research/autocomplete/`). Two results shaped the decision:
+
+**A. Demand buckets (signal score = appearances across all seeds):**
+
+| Rank | Bucket | Score | What it means |
+|---|---|---|---|
+| 1 | **edu-generators** (bingo, word search, seating chart, random picker, spinner, worksheets) | **2,373** | Enormous, evergreen, AI-proof. Two independent proof points that this category prints ad money: `bingobaker.com` ~145k pageviews/day; `baamboozle.com` ~5M visits/mo at 5.86 pages/visit. Low RPM, brutal competition. |
+| 2 | **finance-legal** (dispute letters, contracts, ATS resumes, car value) | **1,889** | Top RPM, high volume. Weak distribution loops. |
+| 3 | device/display (dead-pixel, refresh rate, HDR) | 1,205 | AI-proof, huge, low RPM, heavy supply. |
+| 4 | **creator-utility (QR, polls, RSVP, anonymous message)** | **1,037** | ← *the bucket GuestPass lives in.* |
+| 5–11 | input-latency, mic/cam, AI-detection, mundane, privacy-fingerprint, AI-visibility, net-diagnostics | 707–961 each | All AI-proof, mostly low RPM, mostly crowded. |
+
+**B. The single most important modifier:** `checker / test / tester` = **2,385** appearances, and `my / mine / personal` = **638**. The dominant 2026 intent is **"give me a verdict on MY thing"** — which is exactly the class of query an AI Overview can never satisfy, and exactly the class of product this plan builds.
+
+**C. The highest-repeated single intents:** `dispute letter example (16)` · `how much is my car worth (14)` · `browser fingerprinting (11)` · `what is AI detection (10)` · `resume format to pass ATS (8)` · `random name generator (8)` · `gamepad stick drift tester (7)` · `robots.txt example (8)` · `mic test (6)`.
+
+**How I used this:** the biggest buckets (edu, device, mundane) are AI-proof but monetise at $3–8 RPM and are crowded. The highest-RPM buckets (finance/legal) have no distribution loop. **GuestPass is the only candidate that sits in a top-5 demand bucket (creator-utility) *and* has a forced-share loop *and* sits in a $15–40 RPM vertical.** The two alternatives below are honest fallbacks if you want volume over RPM.
+
+
 ---
 
 ## 3. The architecture — six loops that turn one host into hundreds of visitors
@@ -349,12 +370,15 @@ Scored on the same rubric — **D1** day-1 reachability, **SP** self-propagation
 | Idea | D1 | SP | RPM | VOL | BUILD | DUR | Weighted | Verdict |
 |---|---|---|---|---|---|---|---|---|
 | **A. GuestPass (chosen)** | 4 | 5 | 5 | 4 | 3 | 4 | **4.25** | Best architecture + best RPM; medium build; move before the niche fills. |
-| **B. Free ATS / job-scan toolkit** (resume score, keyword gap, cover-letter match, shareable score card) | 5 | 2 | 4 | 5 | 4 | 3 | **3.75** | Biggest proven demand — the strongest "free"-intent signal of any seed I mined (30 queries). Simplest build. **No distribution loop**, so month 1 is slower. Pick this if you want to ship in 4 days. |
-| **C. AI agent-readability audit** (a *live* multi-user-agent fetch test, not a robots.txt parser, + shareable scorecard) | 4 | 2 | 4 | 2 | 3 | 4 | **2.95** | Timeliest topic in tech marketing and genuinely differentiated — I verified the mechanic live: `cnn.com` returns **451** to GPTBot/PerplexityBot/ClaudeBot but **200** to OAI-SearchBot (a screenshot-worthy, LLM-unanswerable result). But the audience is small (webmasters) and free checkers are already a commodity. |
-| **D. Anonymous group poll for WhatsApp** | 4 | 5 | 2 | 4 | 5 | 4 | **4.10** | Weekend build, strong unmet need, but consumer RPM is $3–8 and Strawpoll/Doodle exist. Great experiment, weak business. |
-| **E. Classroom live tool (13+)** | 5 | 5 | 3 | 4 | 3 | 4 | **4.10** | Highest-frequency group engine that exists (a class opens it daily) — but ads on child-facing pages carry COPPA/policy risk and Kahoot/Blooket/Baamboozle/Gimkit own the space. |
+| **B. Teacher-artifact engine** (a bingo/word-search/seating-chart/random-group generator whose *output* is a link or QR that 30 students open) | 5 | 4 | 2 | 5 | 4 | 4 | **4.05** | **This is where the raw volume is.** Bucket #1 in my demand mining (score 2,373) and two proven money-makers: `bingobaker.com` ~145k pageviews/day, `baamboozle.com` ~5M visits/mo. RPM is the problem ($5–15, and ads on child-facing pages need COPPA care — target 13+ / higher-ed / adult training). Pick this if you want maximum visitors and can live on low RPM. |
+| **C. Free ATS / job-scan toolkit** (resume score, keyword gap, shareable score card) | 5 | 2 | 4 | 5 | 4 | 3 | **3.75** | Biggest "free"-intent signal of any seed I mined (30 queries) and a top-10 repeated intent (`resume format to pass ATS`, 8). Simplest build. **No distribution loop** — month 1 is slower. Ship this if you want revenue fastest in wall-clock time. |
+| **D. Legal/finance letter engine** (deposit dispute, insurance denial, chargeback, contract) | 4 | 2 | 5 | 3 | 4 | 4 | **3.60** | The single most repeated intent in the whole graph is `dispute letter example (16)`, and legal/finance is the highest-RPM vertical ($12–40). AI-proof only if you ship **accurate state-specific statutes + the user's own evidence** (never generic AI prose). No loop, moderate volume. |
+| **E. Anonymous group poll for WhatsApp** | 4 | 5 | 2 | 4 | 5 | 4 | **4.10** | Weekend build, real unmet need (WhatsApp polls are not anonymous), but consumer RPM is $3–8 and Strawpoll/Doodle exist. Great experiment, weak business. |
+| **F. AI agent-readability audit** (live multi-user-agent fetch test + shareable scorecard) | 4 | 2 | 4 | 2 | 3 | 4 | **2.95** | Timeliest topic in tech marketing and genuinely differentiated — I verified the mechanic live: `cnn.com` returns **451** to GPTBot/PerplexityBot/ClaudeBot but **200** to OAI-SearchBot (screenshot-worthy, LLM-unanswerable). But the audience is small (webmasters) and free checkers are already a commodity. |
 
-**Why GuestPass still ranks first:** B and E have equal or better *demand*, but only A converts **one adopter into 100+ visitors at a $15–40 RPM** — the specific thing you asked for. B is the pragmatic fallback; D is the weekend test.
+**Why GuestPass still ranks first:** B has more raw volume and C is faster to ship, but only **A converts one adopter into 100+ visitors at a $15–40 RPM**. The three honest alternatives are: **B if you want maximum visitors** (proven by Bingobaker/Baamboozle, low RPM, COPPA care), **C if you want the fastest path to a first dollar** (4-day build, no loop), **D if you want the highest revenue per visit** (legal/finance RPM, no loop).
+
+**If you only remember one thing from this document:** the money is `pageviews × RPM`, so a strategy that ignores *either* half fails. GuestPass is the only idea in this list that is strong on **both** halves at once — and the reason it is strong on pageviews is not the tool, it is the *forced-share loop* around it.
 
 
 ---
