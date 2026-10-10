@@ -416,6 +416,7 @@ Scored on the same rubric — **D1** day-1 reachability, **SP** self-propagation
 | `bingobaker.com` ≈ 26.7k visitors/day, 145k pageviews/day (~4.4M pv/mo) | HypeStat + SEMrush estimates (fetched 2026-10-10) — *estimates, not audited* |
 | `baamboozle.com` ≈ 5.0M visits/month at 5.86 pages/visit | HypeStat compare page (fetched 2026-10-10) — *estimates* |
 | Free-tool demand signals: resume-ats 30 "free"-intent queries, chore-chart 25, wedding-website 21, anonymous-poll 21, rsvp 20 | Google autocomplete harvest — `research/autocomplete/` (373 query sets mined live, raw JSON kept) |
+| Day-one traffic engines ranked by potential / durability / $0 cost / penalty risk (with Google’s exact link-spam wording on widget + widely-distributed footer links) | `research/traffic-engines.md` §3 and §7 |
 | AI Overviews reduce clicks: Ahrefs −58% (Feb 2026 re-run, 300k keywords, Dec-2023 vs Dec-2025); earlier run −34.5% (Apr 2025); position-1 informational CTR 0.076 → 0.039; corroborated by Seer Interactive −49.4–65.2%, Kevin Indig >50%, Authoritas 47.5% | ahrefs.com/blog/ai-overviews-reduce-clicks-update/ and /ai-overviews-reduce-clicks/ (fetched 2026-10-10) |
 | The live bot-block differential test works and produces a dramatic result | my own curl test in this session: `cnn.com` → 451 (GPTBot/PerplexityBot/ClaudeBot), 200 (OAI-SearchBot, normal browser) |
 | Wedding QR/guest-tool niche is emerging, not saturated | direct inspection of `guestory.app`, `findtheseat.com`, `myguestwork`, `venued.app` (2025–26 indie tools, single-feature) |
