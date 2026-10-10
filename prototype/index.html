@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GuestPass — every guest gets their own pass</title>
+<meta name="robots" content="noindex">
+<style>
+  :root{
+    --ink:#14161a; --ink-2:#4a5262; --line:#e6e8ee; --bg:#f7f8fb; --card:#fff;
+    --brand:#5b3df5; --brand-2:#7c5cff; --ok:#0f9d58; --warn:#b25e00;
+    --radius:14px; --shadow:0 1px 2px rgba(20,22,26,.06),0 8px 24px rgba(20,22,26,.06);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif;
+       color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased}
+  a{color:var(--brand)}
+  .wrap{max-width:860px;margin:0 auto;padding:0 16px 80px}
+  header.top{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+  .top-in{max-width:860px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:10px}
+  .logo{font-weight:700;letter-spacing:-.02em}
+  .logo span{color:var(--brand)}
+  .pill{font-size:12px;color:var(--ink-2);border:1px solid var(--line);border-radius:999px;padding:3px 9px}
+  .spacer{flex:1}
+  h1{font-size:28px;line-height:1.2;letter-spacing:-.02em;margin:24px 0 8px}
+  h2{font-size:20px;letter-spacing:-.01em;margin:28px 0 10px}
+  p.lede{color:var(--ink-2);margin:0 0 20px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+        padding:18px;box-shadow:var(--shadow);margin:16px 0}
+  label{display:block;font-size:13px;font-weight:600;margin:12px 0 4px}
+  input,select,textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;
+        font:inherit;background:#fff}
+  input:focus,textarea:focus,select:focus{outline:2px solid var(--brand-2);outline-offset:1px;border-color:transparent}
+  button{font:inherit;font-weight:600;border:0;border-radius:10px;padding:12px 16px;cursor:pointer}
+  .btn{background:var(--brand);color:#fff}
+  .btn:hover{background:#4a2fe0}
+  .btn-ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+  @media(max-width:620px){.grid2{grid-template-columns:1fr}}
+  .muted{color:var(--ink-2);font-size:14px}
+  .tiny{font-size:12px;color:var(--ink-2)}
+  .pass{border:1px solid var(--line);border-radius:18px;overflow:hidden;background:#fff;box-shadow:var(--shadow)}
+  .pass-top{background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#fff;padding:20px}
+  .pass-top .names{font-size:24px;font-weight:700;letter-spacing:-.02em}
+  .pass-body{padding:18px}
+  .kv{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px dashed var(--line)}
+  .kv:last-child{border-bottom:0}
+  .kv b{font-weight:600}
+  .table-no{font-size:40px;font-weight:800;letter-spacing:-.03em;color:var(--brand)}
+  .tabs{display:flex;gap:6px;margin:14px 0 0;flex-wrap:wrap}
+  .tab{padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:14px;cursor:pointer}
+  .tab[aria-current="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .msg{border-bottom:1px solid var(--line);padding:12px 0}
+  .msg b{display:block;font-size:14px}
+  .msg p{margin:4px 0 0;color:var(--ink-2)}
+  .ad{border:1px dashed #c9cede;background:repeating-linear-gradient(45deg,#fbfbfd,#fbfbfd 8px,#f4f5f9 8px,#f4f5f9 16px);
+      color:#6b7280;font-size:12px;text-align:center;padding:22px 10px;border-radius:10px;margin:16px 0}
+  .ad::before{content:"AD SLOT · "attr(data-zone)" · "attr(data-target)"}
+  .ad.off{display:none}
+  .loop{background:#111318;color:#fff;border-radius:var(--radius);padding:18px;margin:20px 0;text-align:center}
+  .loop a{color:#c9bcff;font-weight:600}
+  .qr{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+  .qr canvas,.qr img{border:8px solid #fff;border-radius:10px}
+  .notice{border-left:4px solid var(--warn);background:#fff8ee;padding:10px 12px;border-radius:8px;font-size:14px}
+  .ok{color:var(--ok);font-weight:600}
+  .hide{display:none !important}
+  .foot{max-width:860px;margin:0 auto;padding:24px 16px 60px;color:var(--ink-2);font-size:13px}
+  .steps{counter-reset:s;list-style:none;padding:0;margin:8px 0 0}
+  .steps li{counter-increment:s;padding:8px 0 8px 34px;position:relative;border-bottom:1px solid var(--line)}
+  .steps li:last-child{border-bottom:0}
+  .steps li::before{content:counter(s);position:absolute;left:0;top:8px;width:22px;height:22px;border-radius:50%;
+      background:var(--brand);color:#fff;font-size:12px;font-weight:700;display:grid;place-items:center}
+  @media print{header.top,.loop,.ad,.no-print{display:none !important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <div class="logo">Guest<span>Pass</span></div>
+    <span class="pill">free · no signup</span>
+    <div class="spacer"></div>
+    <button class="tab no-print" id="navHome">Home</button>
+    <button class="tab no-print" id="navDemo">Open demo event</button>
+  </div>
+</header>
+<div class="wrap" id="app"></div>
+<div class="foot" id="foot"></div>
+<script src="vendor/qrcode.min.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>
