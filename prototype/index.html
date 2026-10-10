@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>InReview — is your review time normal?</title>
+<meta name="description" content="Cohort-segmented app store review time tracker. User-reported data, with confidence intervals and a live embeddable status badge.">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="wrap">
+  <div class="brand">
+    <strong>InReview</strong>
+    <span class="tag">queue telemetry</span>
+  </div>
+  <nav>
+    <a href="#check">Check</a>
+    <a href="#index">Index</a>
+    <a href="#method">Method</a>
+  </nav>
+</header>
+
+<div class="banner wrap" role="note">
+  <strong>Prototype.</strong> Data is <em>synthetic</em> (generated for this demo, see
+  <code>tools/gen-seed.mjs</code>) so you can see the shape of the product offline.
+  In production this is replaced by user-submitted rows. Not affiliated with Apple Inc. or Google LLC.
+</div>
+
+<main class="wrap">
+
+  <!-- ── 1. THE CHECK ───────────────────────────────────────────── -->
+  <section id="check">
+    <h1>Is your review time normal?</h1>
+    <p class="lede">
+      Submit your date and cohort. We compare you against the distribution of
+      <em>user-reported</em> outcomes for the same cohort — not a stale global average.
+    </p>
+
+    <form id="check-form" class="card">
+      <div class="grid">
+        <label>Platform
+          <select name="queue">
+            <option value="apple">Apple App Review</option>
+            <option value="google">Google Play Review</option>
+            <option value="meta">Meta App Review</option>
+          </select>
+        </label>
+        <label>Platform target
+          <select name="platform"></select>
+        </label>
+        <label>Release type
+          <select name="releaseType">
+            <option value="new_app">New app</option>
+            <option value="update">Update</option>
+            <option value="hotfix">Hotfix</option>
+            <option value="resubmission">Resubmission</option>
+          </select>
+        </label>
+        <label>Country tier
+          <select name="countryTier">
+            <option value="us">US</option>
+            <option value="eu">EU</option>
+            <option value="row">Rest of world</option>
+          </select>
+        </label>
+        <label>Submitted on
+          <input type="date" name="submittedAt" required>
+        </label>
+        <label class="cb">
+          <input type="checkbox" name="firstSubmission">
+          <span>First submission to this platform</span>
+        </label>
+      </div>
+      <button type="submit" class="primary">Check my queue →</button>
+      <p class="fine">No account needed. We only email you if you ask us to.</p>
+    </form>
+  </section>
+
+  <!-- ── 2. THE RESULT ──────────────────────────────────────────── -->
+  <section id="result" hidden>
+    <h2>Your cohort</h2>
+    <div class="card result" id="result-card"></div>
+
+    <!-- SPONSOR SLOT — the day-2/5 rail. This is the placement sold by DM. -->
+    <div class="ad sponsor">
+      <span class="adlabel">Sponsor</span>
+      <div>
+        <strong>Your logo here</strong>
+        <p class="fine">One slot, shown immediately after the check — the highest-intent
+        moment in a developer's release cycle. <em>$200 / month, first month.</em></p>
+      </div>
+    </div>
+
+    <div class="ad display">
+      <span class="adlabel">Display</span>
+      <p class="fine">Ezoic / AdSense slot — the floor, turned on day 30+. Never the business.</p>
+    </div>
+
+    <div class="ad affiliate">
+      <span class="adlabel">Affiliate</span>
+      <p><strong>Shipping this release?</strong> Compare release-automation and crash-reporting
+      tools → <a href="#method">link</a> <span class="fine">(Disclosure: we may earn a commission — 16 CFR Part 255.)</span></p>
+    </div>
+  </section>
+
+  <!-- ── 3. THE BADGE ───────────────────────────────────────────── -->
+  <section id="badge">
+    <h2>The badge <span class="pill">the distribution engine</span></h2>
+    <p class="lede">Every check mints a live SVG. Embed it in a README, a docs page, a status page —
+      it updates itself as the cohort moves.</p>
+    <div class="card badge-card">
+      <div class="badge-preview" id="badge-preview"></div>
+      <div class="embed">
+        <label for="embed-code">Embed code</label>
+        <textarea id="embed-code" readonly rows="3"></textarea>
+        <button id="copy-embed" class="primary small">Copy embed</button>
+        <p class="fine" id="copy-note"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 4. THE INDEX ───────────────────────────────────────────── -->
+  <section id="index">
+    <h2>The Queue Index</h2>
+    <p class="lede">The citable artifact. Journalists need numbers and don't care about your traffic —
+      this is the only distribution channel that never bans you.</p>
+    <div class="card" id="index-card"></div>
+  </section>
+
+  <!-- ── 5. METHOD ──────────────────────────────────────────────── -->
+  <section id="method">
+    <h2>Method, and what we refuse to claim</h2>
+    <div class="card">
+      <ul class="method">
+        <li><strong>All data is user-reported.</strong> We never scrape platforms, and we have no affiliation with them.</li>
+        <li><strong>We never show a statistic below n = 30.</strong> Below that we say "insufficient data" and mean it.</li>
+        <li><strong>We report distributions, not predictions.</strong> Median, p25–p75, p90 — with sample size attached.</li>
+        <li><strong>We never claim a platform is "slow on purpose."</strong> We report what users experienced, nothing more.</li>
+        <li><strong>This is not a promise about your submission.</strong> A queue is a distribution; you are one draw from it.</li>
+      </ul>
+      <p class="fine">Demo data is synthetic and labelled as such in <code>data/seed.json</code>.
+      Replace it with a real submissions table before showing anyone.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="wrap fine">
+  <p>InReview — a prototype of the Queue Engine. Not affiliated with Apple Inc., Google LLC, or Meta Platforms Inc.
+  User-reported data only.</p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
+
