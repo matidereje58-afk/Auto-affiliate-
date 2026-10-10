@@ -9,6 +9,7 @@ with an architecture that makes traffic self-generating.
 | **`prototype/`** | A **working prototype** of the core mechanic (no build step, no server): create an event, every guest gets a personal pass, message wall, QR card, host console, and the growth-loop footer. Open `prototype/index.html`. |
 | `research/ad-economics.md` | Verified 2026 ad economics: network thresholds (AdSense / Journey 1k sessions / Raptive 25k PV / Mediavine $5k / Ezoic 250k MAU), RPM envelopes by vertical, pageview-to-revenue tables, and the exact Google policies that constrain a free-tool site. |
 | `research/whitespace.md` | Independent demand mining: 1,407 autocomplete query sets -> 10,872 unique suggestions, ranked into 11 intent buckets, plus the action-modifier analysis. |
+| `research/traffic-engines.md` | Zero-budget day-one traffic engines, ranked: artifact-share loops, hosted-output landing pages, embeds/widget backlinks (with Google’s exact link-spam wording), marketplace surfaces, programmatic SEO vs AI Overviews, and $0 community launch mechanics. |
 | `research/autocomplete/` | Raw demand data (thousands of JSON files) so every demand claim is auditable. |
 | `research/mine_autocomplete.py` | The tool that produced it - run it on any seed to check demand yourself. |
 
