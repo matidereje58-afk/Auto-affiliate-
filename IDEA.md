@@ -286,7 +286,7 @@ One relationship is worth more than 100 Reddit upvotes.
 
 ## 7. The AI-proof layer — why this survives 2026 (and what does not)
 
-**The brutal fact:** informational content is dead as a traffic strategy. Studies of Google AI Overviews found **58–61% lower click-through** on queries that get an AI answer (`research/` notes; multiple 2025–26 studies). If your plan is "write 300 articles about wedding etiquette", an AI Overview eats 6 of every 10 clicks and you lose.
+**The brutal fact:** informational content is dead as a traffic strategy. Measured impact of Google AI Overviews on clicks: **Ahrefs: −58%** on queries that trigger an AIO (update, 2025); **ppc.land: −61% organic CTR**; an academic study found **−39.8%**. Range: a third to two thirds of clicks gone. If your plan is "write 300 articles about wedding etiquette", an AI Overview eats those clicks and you lose.
 
 **The good news:** an AI Overview cannot do any of the following, and never will:
 - collect an RSVP from 100 named guests,
@@ -396,7 +396,7 @@ Scored on the same rubric — **D1** day-1 reachability, **SP** self-propagation
 | `bingobaker.com` ≈ 26.7k visitors/day, 145k pageviews/day (~4.4M pv/mo) | HypeStat + SEMrush estimates (fetched 2026-10-10) — *estimates, not audited* |
 | `baamboozle.com` ≈ 5.0M visits/month at 5.86 pages/visit | HypeStat compare page (fetched 2026-10-10) — *estimates* |
 | Free-tool demand signals: resume-ats 30 "free"-intent queries, chore-chart 25, wedding-website 21, anonymous-poll 21, rsvp 20 | Google autocomplete harvest — `research/autocomplete/` (373 query sets mined live, raw JSON kept) |
-| AI Overviews reduce clicks ~58–61% | 2025–26 published studies surfaced during research (directional) |
+| AI Overviews reduce clicks: Ahrefs −58%, ppc.land −61% CTR, academic study −39.8% | ahrefs.com/blog/ai-overviews-reduce-clicks-update, ppc.land, arxiv/SSRN study (fetched 2026-10-10) |
 | The live bot-block differential test works and produces a dramatic result | my own curl test in this session: `cnn.com` → 451 (GPTBot/PerplexityBot/ClaudeBot), 200 (OAI-SearchBot, normal browser) |
 | Wedding QR/guest-tool niche is emerging, not saturated | direct inspection of `guestory.app`, `findtheseat.com`, `myguestwork`, `venued.app` (2025–26 indie tools, single-feature) |
 
