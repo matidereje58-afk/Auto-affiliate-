@@ -97,6 +97,9 @@ const shell = (title, body, depth = 0) => `<!DOCTYPE html>
 <link rel="stylesheet" href="${'../'.repeat(depth)}styles.css">
 </head><body><div class="wrap">
 <div class="banner"><strong>Demo.</strong> Built from <code>data/mock-vehicles.json</code> — illustrative mock data, not real NHTSA records.
+<strong>This is a MECHANISM demo, not a viable business:</strong> the exposure denominator it relies on
+(make/model/year registrations) is <em>not</em> freely available — it is an enterprise licence from
+S&amp;P Global Mobility / Experian Automotive. See <code>VOLUME-PLAY.md</code> §2.
 Not affiliated with NHTSA or any manufacturer.</div>
 ${body}
 <footer>

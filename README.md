@@ -1,5 +1,5 @@
 # THE NORMALIZATION ENGINE
-### A $0 build with a credible path to **500k–1M views/month** — plus the retention layer that makes the audience yours.
+### A $0 build with a credible path to **500k–1M views/month** — and the corrections that make the claim honest.
 
 ---
 
@@ -7,74 +7,86 @@
 
 > **Take a free public dataset that everyone publishes as raw counts — and publish the number nobody publishes: the *normalized* one.**
 
-Raw counts are biased by popularity, so the version of these questions that exists on the internet today is **wrong**. NHTSA says "2,792 complaints." That tells you the car is *popular*, not that it is unreliable. Nobody publishes **severity-adjusted complaints per 1,000 vehicle-years on the road.**
+Raw counts are biased by popularity. The version of these questions that exists on the internet today is therefore **wrong** — it tells you what is *popular*, not what is *bad*. Divide by the right exposure denominator and you get a number that **exists nowhere else**, which is simultaneously your content, your SEO survival strategy, your PR hook, and your moat.
 
-That one move does four things at once — and they are exactly the four things you need:
-
-1. **It creates a number that exists nowhere else** → which is precisely what stops Google treating 10,000 generated pages as "scaled content" and starts treating them as **original research**.
-2. **It scales to ~16,000 pages from free data** → the *only* $0 path to 500k–1M views/month.
-3. **It inverts the conventional wisdom** → "the most reliable car isn't the one you think" is a press story, a forum post, and a Short, all from one dataset.
-4. **It is a method, not a niche** → the same pipeline works on hospitals, airlines, cities, schools, recalls.
-
-**Flagship deployment: `FAULTLINE`** — *"What actually goes wrong with this car, per 1,000 on the road."*
+**But there is one filter that kills most versions of this idea instantly — see §2.**
 
 ---
 
-## Why the volume requirement changes everything
+## The correction (read this first)
 
-You asked for an idea that can reach **500k–1M views/month**. That is a *volume* problem, and it eliminates most clever concepts immediately:
+I built v1 of this play, then had it attacked by a hostile reviewer. **It died, and I was wrong by an order of magnitude.** That correction is the most valuable part of this repo, so it goes first:
 
-| Traffic source | Ceiling at $0 | Reaches 1M/mo? |
+| # | What v1 claimed | What was actually true |
 |---|---|---|
-| Viral social | Big spikes, 48-hour half-life, you don't own it | ❌ |
-| Community launch | 10k–30k sessions, −85% in 72h | ❌ |
-| Direct/return (a tool) | Grows only once you already have an audience | 🟨 |
-| **Long-tail search (thousands of pages)** | **Unbounded — page count × ranking** | ✅ **the only $0 path** |
+| **1** | "Compute severity-adjusted complaints **per 1,000 vehicle-years**." | ☠️ **The denominator does not exist for free.** FHWA publishes registrations by **state × body type** — *not* make/model/year. That data is a $50k–500k/yr enterprise licence (S&P Global Mobility, Experian). **The auto vertical was never buildable.** |
+| **2** | "10,000 pages ≈ 1.07M views/month." | 🔧 The model used a plain lognormal, which has **no mass at zero**. Real programmatic long-tail is **zero-inflated** — most pages are never indexed at all. Corrected: **1M views/mo needs ~18,500 pages at top-decile execution, ~59,000 at median, ~309,000 at bottom-decile.** |
+| **3** | "$20–40 RPM." | 🔧 I conflated **advertiser CPC** with **publisher RPM**. Publisher RPM is **$6–12 entry / $15–25 mid / $20–35 top**. |
+| **4** | "A unique number isn't 'scaled content.'" | 🔧 Wishful. The March-2024 policy applies *"regardless of how it's produced."* Google classifies the **rendered page shape**, not your methodology. |
+
+**The method survived. The deployment did not.** Full autopsy: [`VOLUME-PLAY.md` §0](VOLUME-PLAY.md).
+
+---
+
+## §2 — The filter that matters: **the denominator must be free**
+
+Every dataset publishes the **numerator** (the counts) and hides the **denominator** (the exposure). **The numerator is the press release; the denominator is the product.**
+
+| Dataset | Denominator | Free? |
+|---|---|---|
+| NHTSA vehicle complaints | make/model/year registrations | ❌ **$50k–500k/yr licence** |
+| CPSC recalls | units sold | ❌ commercial |
+| **BTS aviation** | **departures, seats, passenger-miles** | ✅ **free** |
+| **CMS hospitals** | **discharges, patient-days** | ✅ **free** |
+| **NCES education** | **enrollment** | ✅ **free** |
+| **FBI crime** | **population** | ✅ **free** |
+| **FAA aircraft registry** | **aircraft by make/model** | ✅ **free** |
+
+> **If the denominator is not free, the metric cannot be computed and the idea does not exist — no matter how clever it is.**
+
+---
+
+## §1 — The corrected path to 500k–1M views/month
+
+```bash
+node tools/traffic-model.mjs
+```
 
 ```
-views/month ≈ pages × (share that rank) × (mean views per ranking page)
+  target              p10 (pages)      p50 (pages)      p90 (pages)
+  100k views/mo            30,893            5,903            1,853
+  500k views/mo           154,465           29,514            9,267
+  1.00M views/mo          308,930           59,028           18,534
 ```
 
-**1M views/month ≈ 10,000 pages averaging ~100 views.** There is no version of this that works with 30 beautiful articles. The architecture must be a **page factory with a real dataset behind it** — and the dataset is what keeps you alive.
+Nobody should build one 60,000-page site — that shape is exactly what gets classified as a farm. So:
 
-Verify the arithmetic yourself: `node tools/traffic-model.mjs`
+> **You reach 500k–1M views/month as a PORTFOLIO of normalization sites, not as one site.** Six sites of 3,000–10,000 pages each, in six verticals, each with its own free denominator and its own brand: individually defensible, individually survivable, cumulatively 1M+/month, and near-zero marginal cost because it is **the same pipeline re-skinned**.
+
+| Phase | Months | Build | Target |
+|---|---|---|---|
+| 1 | 0–6 | One vertical. 1 Index + 1 tool + 200–300 differentiated pages. | 5k–20k views/mo |
+| 2 | 6–12 | Scale to 2,000–5,000 pages where the data supports it. | 50k–150k views/mo |
+| 3 | 12–24 | Re-skin to verticals #2 and #3. | 200k–500k views/mo |
+| 4 | 24–36 | Verticals #4–#6. | **500k–1M+ views/mo** |
 
 ---
 
 ## The three ingredients you gave me, used properly
 
-| # | Ingredient | The naive use | **The strategic use** |
+| # | Ingredient | Naive use | **Strategic use** |
 |---|---|---|---|
-| 1 | **$0 capital** | "I'll do it manually until I can afford ads." | Zero capital forces **leverage instead of spend**: you can't buy traffic, so you *manufacture* a dataset nobody else has and let page count do the work. |
-| 2 | **Ad clicks** | "Put AdSense on a blog and pray for pageviews." | Ads only work **at volume, and only at the right RPM.** The same 1M views are worth ~$4k on a general site and ~$30k in a $20–40 RPM vertical. **The vertical is worth 5–7× more than any traffic tactic.** |
-| 3 | **Own website** | "A blog." | The site is the **factory and the moat**: you own the pipeline, the computed metric, and the audience. A platform owns the audience and rents it back at whatever price it decides. |
+| 1 | **$0 capital** | "I'll do it manually until I can afford ads." | Zero capital forces **leverage over spend**: you can't buy traffic, so you *manufacture a metric nobody has* and let portability do the scaling. |
+| 2 | **Ad clicks** | "AdSense on a blog, pray for pageviews." | Ads only work **at volume and at the right RPM** — and RPM is set by the vertical, not by traffic tactics. |
+| 3 | **Own website** | "A blog." | The site is the **factory and the moat**: you own the pipeline, the metric, and the audience. A platform owns the audience and rents it back at whatever price it decides. |
 
 ## …and the smart ingredient
 
 > **THE 4TH INGREDIENT — Normalization.**
 >
-> Free public data becomes a proprietary metric the moment you divide it by the right denominator. **Normalization is free to compute, impossible to copy without doing the work, produces a number that exists nowhere else, and frequently inverts what everyone believes.**
+> Free public data becomes a proprietary metric the moment you divide it by the right denominator. It is **free to compute, impossible to copy without doing the work, produces a number that exists nowhere else, and frequently inverts what everyone believes.**
 >
-> It is simultaneously your **content strategy**, your **SEO survival strategy** (original data ≠ scaled content), your **PR strategy**, and your **social strategy** — one trick, four jobs.
-
----
-
-## See it work (2 commands, zero dependencies)
-
-```bash
-node tools/traffic-model.mjs   # the path to 500k-1M views/mo, and the money at each step
-node tools/gen-pages.mjs       # runs the normalization engine and generates the site
-```
-
-`gen-pages.mjs` prints the inversion that *is* the product:
-
-```
-  2016 Maserati Ghibli     SACR 12.08   raw   214    #12 by raw  ->  #1  normalized
-  2014 Ford Focus          SACR  5.14   raw 2,792    #1  by raw  ->  #3  normalized
-  2018 Toyota Corolla      SACR  0.45   raw   408    #10 by raw  ->  #12 normalized
-```
-
-**The car with the fewest complaints on the internet is the least reliable one in this cohort.** Every other site has it backwards. That is the whole business.
+> One trick, four jobs: **content strategy, SEO survival strategy, PR strategy, and moat.**
 
 ---
 
@@ -82,26 +94,30 @@ node tools/gen-pages.mjs       # runs the normalization engine and generates the
 
 | File | What it is |
 |---|---|
-| **[VOLUME-PLAY.md](VOLUME-PLAY.md)** | ⭐ **The main idea.** The normalization trick, the 4-layer architecture, the page inventory, the traffic math to 500k–1M, how it survives Google's scaled-content policy, and 6 verticals that clear the bar. |
+| **[VOLUME-PLAY.md](VOLUME-PLAY.md)** | ⭐ **The main document.** The correction, the free-denominator filter, corrected traffic math, vertical scoring, the two survival rules, the portfolio path to 1M, corrected economics, hard kill criteria. |
+| **[tools/traffic-model.mjs](tools/traffic-model.mjs)** | The **corrected** zero-inflated model: published → indexed → ranking → views. |
 | **[IDEA.md](IDEA.md)** | The **retention layer** — the Queue Engine (check → forecast → live badge). Converts anonymous search traffic into an audience you own. |
-| **[STRATEGY.md](STRATEGY.md)** | The honest analysis: constraint physics, p10/p50/p90 unit economics, the red-team findings that killed v1, the legal risk register, hard decision gates. |
-| **[PLAYBOOK.md](PLAYBOOK.md)** | Day 0 → Day 90 execution: the $0 stack, launch copy, the sponsor DM script, kill criteria. |
-| **[tools/traffic-model.mjs](tools/traffic-model.mjs)** | Verifiable model: pages → views → revenue. |
-| **[tools/gen-pages.mjs](tools/gen-pages.mjs)** | Working normalization engine + static site generator. |
-| **[data/mock-vehicles.json](data/mock-vehicles.json)** | The dataset shape (illustrative mock — replace with the free NHTSA/FHWA feeds). |
+| **[STRATEGY.md](STRATEGY.md)** | Constraint physics, p10/p50/p90 unit economics, the first red-team autopsy, the legal risk register. |
+| **[PLAYBOOK.md](PLAYBOOK.md)** | Day 0 → Day 90 execution: the $0 stack, launch copy, the sponsor DM script. |
+| **[tools/gen-pages.mjs](tools/gen-pages.mjs)** | A working normalization engine — **mechanism demo only**; its denominator is not free. |
 | **[prototype/](prototype/)** | Working prototype of the retention layer (live badge + cohort forecast). |
 
 ---
 
-## The honest truth about the timeline
+## The honest verdict
 
-**500k–1M views/month is a 12–24 month build, not a 90-day one.** The model says 500k is crossed around month 15 and 1M around month 24. Anyone promising faster is selling a course.
+**500k–1M views/month is reachable — as a 24–36 month portfolio build, at top-decile execution.** The corrected economics:
 
-But **the staircase pays at every step**: ~$500/mo at 30k views, ~$3k/mo at 150k views, and **$18,000–46,000/month at 1M views** — on a build with **$0** in hard costs.
+| | p10 | p50 | p90 |
+|---|---|---|---|
+| Views/month at month 24 | ~10k | ~180k | ~1.09M |
+| Monthly revenue | ~$60 | ~$4,200 | ~$46,700 |
+| Cumulative 24-month revenue | $4,000 | $27,000 | $180,000 |
+| **Effective $/hour** | **$3** | **$18** | **$113** |
 
-Full arithmetic, risks and kill criteria: `VOLUME-PLAY.md` §5, §8, §9.
+**The expected value is carried almost entirely by the p90 tail.** If you are not prepared to be in that column, don't start — and if you do, honour gate **G3** in `VOLUME-PLAY.md` §8: *3,000 sessions/month or 30% indexed by month 9, or re-skin the vertical.*
 
 ---
 
-*Built on branch `cline/anyxxqjr`. Every number is labelled measured, modelled, or assumed.*
+*Built on branch `cline/anyxxqjr`. Every number is labelled measured, modelled, or assumed — and the ones that were wrong are documented rather than deleted.*
 

@@ -1,21 +1,30 @@
 #!/usr/bin/env node
 /**
- * traffic-model.mjs — does the architecture actually reach 500k-1M views/month?
+ * traffic-model.mjs  —  CORRECTED (v2)
  *
- * Models monthly pageviews for a programmatic long-tail site as a lognormal
- * distribution over pages. Calibration rationale:
+ * v1 of this file modelled page traffic as a plain lognormal with median = 40
+ * views/month. A red-team review killed that assumption, and it was right:
  *
- *   median page = 40 views/month
- *   A long-tail page ("2013 Nissan Altima problems") ranking mid-page-1 for a
- *   query with 1-3k searches/mo converts ~4-10% CTR -> 40-300 visits/mo.
- *   40 is deliberately the *median*, i.e. half of all pages do worse. This is a
- *   conservative calibration, not an optimistic one.
+ *   1. A PLAIN lognormal has no mass at zero. It silently asserted that the
+ *      bottom half of a 10,000-page inventory averages ~17 views/month.
+ *      Reality on a new domain is ZERO-INFLATED: most pages are never even
+ *      selected for the index, and get ~0 views.
  *
- *   sigma = 1.4 -> the head is long. The best page in a 10,000-page inventory
- *   lands around 15-16k views/mo, which is what a #1-3 ranking on a high-volume
- *   model-year query actually earns.
+ *   2. It conflated ADVERTISER CPC with PUBLISHER RPM. $20-40 is what an
+ *      insurer pays per click, not what a publisher earns per 1,000 views.
  *
- * Deterministic (seeded). Run: node tools/traffic-model.mjs
+ * The corrected model has THREE gates a page must pass before it earns
+ * anything, and only a fraction of pages clear all three:
+ *
+ *      published  ->  indexed  ->  ranking  ->  views
+ *
+ *   indexedShare = share of pages Google actually selects for the index
+ *                  (GSC "Discovered - currently not indexed" is the normal
+ *                   outcome for templated pages on a new domain)
+ *   rankingShare = share of INDEXED pages that rank well enough to earn clicks
+ *   views        = lognormal, applied ONLY to pages that clear both gates
+ *
+ * Run: node tools/traffic-model.mjs
  */
 
 function mulberry32(a) {
@@ -33,121 +42,104 @@ function normal(rand) {
   return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
 }
 
-const MEDIAN_VIEWS = 40;
-const SIGMA = 1.4;
-const MU = Math.log(MEDIAN_VIEWS);
-const MEAN_VIEWS = Math.exp(MU + (SIGMA * SIGMA) / 2); // ~106.6 views/mo per mature page
+/** Honest uncertainty bands for a competent solo operator on a NEW domain.
+ *  They differ on the two gates that decide the outcome, not on optimism. */
+const SCENARIOS = {
+  p10: { label: 'p10 demoted / ignored', indexed: 0.30, ranking: 0.12, median: 25, sigma: 1.6, rpm: 6,  aff: 0.004 },
+  p50: { label: 'p50 indexed, half-ranking', indexed: 0.55, ranking: 0.25, median: 40, sigma: 1.5, rpm: 15, aff: 0.008 },
+  p90: { label: 'p90 clean index, ranks well', indexed: 0.75, ranking: 0.45, median: 60, sigma: 1.4, rpm: 28, aff: 0.015 },
+};
 
-function simulate(nPages, seed = 7) {
+const meanViews = (s) => s.median * Math.exp((s.sigma * s.sigma) / 2);
+
+function simulate(nPages, s, seed = 11) {
   const rand = mulberry32(seed);
+  const nIndexed = Math.round(nPages * s.indexed);
+  const nRanking = Math.round(nIndexed * s.ranking);
+  let total = 0;
   const views = [];
-  for (let i = 0; i < nPages; i++) views.push(Math.exp(MU + SIGMA * normal(rand)));
+  for (let i = 0; i < nRanking; i++) {
+    const v = Math.exp(Math.log(s.median) + s.sigma * normal(rand));
+    views.push(v); total += v;
+  }
   views.sort((a, b) => b - a);
-  const sum = views.reduce((a, b) => a + b, 0);
-  const q = (p) => views[Math.min(views.length - 1, Math.floor(p * views.length))];
   return {
-    n: nPages, total: sum,
-    p50: q(0.5), p90: q(0.1), p99: q(0.01), max: views[0],
-    top10Share: views.slice(0, 10).reduce((a, b) => a + b, 0) / sum,
-    top100Share: views.slice(0, 100).reduce((a, b) => a + b, 0) / sum,
+    published: nPages, indexed: nIndexed, ranking: nRanking, total,
+    p50: views[Math.floor(views.length / 2)] ?? 0,
+    best: views[0] ?? 0,
+    display: (total / 1000) * s.rpm,
+    affiliate: total * s.aff,
+    get revenue() { return this.display + this.affiliate; },
   };
 }
 
-const k = (n) => Math.round(n / 1000).toLocaleString() + 'k';
+const k = (n) => (n >= 1e6 ? (n / 1e6).toFixed(2) + 'M' : Math.round(n / 1000) + 'k');
 const money = (n) => '$' + Math.round(n).toLocaleString();
-const pct = (n) => (n * 100).toFixed(0) + '%';
+const line = (c = '-', n = 88) => c.repeat(n);
 
-console.log('\n══════════════════════════════════════════════════════════════════');
-console.log('  VIEW MODEL — programmatic long-tail inventory');
-console.log('══════════════════════════════════════════════════════════════════');
-console.log(`  median page      ${MEDIAN_VIEWS} views/month`);
-console.log(`  mean page        ${MEAN_VIEWS.toFixed(1)} views/month (lognormal, sigma=${SIGMA})`);
-console.log('');
-console.log('  pages      total views/mo    p50 page   p90 page   p99 page   best page');
-console.log('  ────────────────────────────────────────────────────────────────────────');
-for (const n of [500, 1000, 2500, 5000, 7500, 10000, 15000]) {
-  const s = simulate(n);
+console.log('\n' + line('='));
+console.log('  CORRECTED VIEW MODEL - zero-inflated (published -> indexed -> ranking -> views)');
+console.log(line('='));
+for (const s of Object.values(SCENARIOS)) {
+  console.log(`  ${s.label.padEnd(28)} index ${(s.indexed * 100).toFixed(0).padStart(2)}%  |  ` +
+    `of indexed, ${(s.ranking * 100).toFixed(0).padStart(2)}% rank  |  ` +
+    `ranking-page median ${s.median} v/mo  |  RPM $${s.rpm}`);
+}
+
+console.log('\n' + line());
+console.log('  VIEWS BY INVENTORY SIZE');
+console.log(line());
+console.log('  pages      p10 views   p10 rev      p50 views   p50 rev      p90 views   p90 rev');
+console.log(line());
+for (const n of [500, 1000, 2500, 5000, 10000, 20000, 50000]) {
+  const a = simulate(n, SCENARIOS.p10), b = simulate(n, SCENARIOS.p50), c = simulate(n, SCENARIOS.p90);
   console.log(
-    `  ${String(n).padStart(6)}   ${k(s.total).padStart(12)}   ` +
-    `${Math.round(s.p50).toString().padStart(8)}   ${Math.round(s.p90).toString().padStart(8)}   ` +
-    `${Math.round(s.p99).toString().padStart(8)}   ${Math.round(s.max).toString().padStart(9)}`
+    `  ${String(n).padStart(6)}  ${k(a.total).padStart(10)} ${money(a.revenue).padStart(10)}  ` +
+    `${k(b.total).padStart(11)} ${money(b.revenue).padStart(10)}  ` +
+    `${k(c.total).padStart(11)} ${money(c.revenue).padStart(10)}`
   );
 }
-const s5 = simulate(5000), s10 = simulate(10000), s15 = simulate(15000);
-console.log('');
-console.log(`  concentration: top 10 pages = ${pct(s10.top10Share)} of traffic, top 100 = ${pct(s10.top100Share)}`);
-console.log(`  → 5,000 pages ≈ ${k(s5.total)} views/mo · 10,000 ≈ ${k(s10.total)} · 15,000 ≈ ${k(s15.total)}`);
 
-// ── page inventory: what can actually be built from the dataset ──────────────
-console.log('\n══════════════════════════════════════════════════════════════════');
-console.log('  PAGE INVENTORY (derived from free NHTSA + FHWA data)');
-console.log('══════════════════════════════════════════════════════════════════');
-const inventory = [
-  ['Vehicle-year reliability pages (250 models x 25 yrs)', 6250],
-  ['Vehicle-year recall & safety pages', 6250],
-  ['Component pages (model x common fault)', 3000],
-  ['"Years to avoid" pages (model)', 250],
-  ['Comparison pages (A vs B)', 500],
-  ['Brand & make overview pages', 120],
-  ['Methodology / index / editorial', 60],
-];
-let total = 0;
-for (const [label, n] of inventory) { total += n; console.log(`  ${String(n).padStart(6)}   ${label}`); }
-console.log(`  ${String(total).padStart(6)}   TOTAL addressable inventory`);
-console.log('  → inventory comfortably exceeds the 10,000 pages needed for 1M views/mo');
-
-// ── ramp: indexing lag is real and is why this takes 12-24 months, not 3 ─────
-console.log('\n══════════════════════════════════════════════════════════════════');
-console.log('  TIMELINE (indexing + ranking lag applied)');
-console.log('══════════════════════════════════════════════════════════════════');
-console.log('  month  pages live  ranking  effective   views/mo   display @$12    @$20    @$30');
-console.log('  ─────────────────────────────────────────────────────────────────────────────────');
-const ramp = [
-  [3, 600, 0.45], [6, 1800, 0.60], [9, 3200, 0.70],
-  [12, 5000, 0.78], [15, 7000, 0.82], [18, 9000, 0.85], [24, 12000, 0.88],
-];
-let hit500 = null, hit1m = null;
-for (const [month, pages, rate] of ramp) {
-  const eff = pages * rate;
-  const views = eff * MEAN_VIEWS;
-  if (!hit500 && views >= 500000) hit500 = month;
-  if (!hit1m && views >= 1000000) hit1m = month;
+console.log('\n' + line());
+console.log('  HOW MANY PAGES TO REACH THE TARGET?');
+console.log(line());
+console.log('  target              p10 (pages)      p50 (pages)      p90 (pages)');
+console.log(line());
+for (const target of [100000, 250000, 500000, 1000000]) {
+  const need = (s) => Math.round(target / (s.indexed * s.ranking * meanViews(s)));
   console.log(
-    `  ${String(month).padStart(5)}  ${String(pages).padStart(10)}  ${pct(rate).padStart(7)}  ` +
-    `${Math.round(eff).toString().padStart(9)}  ${k(views).padStart(9)}  ` +
-    `${money(views / 1000 * 12).padStart(11)}  ${money(views / 1000 * 20).padStart(7)}  ${money(views / 1000 * 30).padStart(7)}`
+    `  ${(k(target) + ' views/mo').padEnd(18)} ${String(need(SCENARIOS.p10).toLocaleString()).padStart(12)}   ` +
+    `${String(need(SCENARIOS.p50).toLocaleString()).padStart(14)}   ${String(need(SCENARIOS.p90).toLocaleString()).padStart(14)}`
   );
 }
 console.log('');
-console.log(`  → 500k views/mo crossed around month ${hit500 ?? '>24'}; 1M views/mo around month ${hit1m ?? '>24'}`);
+console.log('  THIS IS THE CORRECTION THAT MATTERS:');
+console.log('    - 1M views/mo needs ~18,500 pages at top-decile execution,');
+console.log('      ~59,000 at median execution, and ~309,000 at bottom-decile.');
+console.log('    - v1 of this model claimed 10,000 pages => 1.07M views/mo.');
+console.log('      That was 10-20x optimistic. Corrected above.');
 
-// ── revenue stack at the target ──────────────────────────────────────────────
-console.log('\n══════════════════════════════════════════════════════════════════');
-console.log('  REVENUE STACK AT TARGET');
-console.log('══════════════════════════════════════════════════════════════════');
-console.log('  rail                                    500k views/mo        1M views/mo');
-console.log('  ─────────────────────────────────────────────────────────────────────────');
-const rails = [
-  ['Display ads @ $12 RPM (entry tier)', (v) => (v / 1000) * 12],
-  ['Display ads @ $20 RPM (mid tier)', (v) => (v / 1000) * 20],
-  ['Display ads @ $30 RPM (Raptive tier)', (v) => (v / 1000) * 30],
-  ['Affiliate / lead-gen @ $0.006/view', (v) => v * 0.006],
-  ['Affiliate / lead-gen @ $0.015/view', (v) => v * 0.015],
-  ['Index sponsorship (flat)', () => 1000],
-];
-for (const [label, fn] of rails) {
-  console.log(`  ${label.padEnd(40)} ${money(fn(500000)).padStart(11)} ${money(fn(1000000)).padStart(20)}`);
+console.log('\n' + line());
+console.log('  REVENUE AT THE TARGET (corrected RPM, p90 execution)');
+console.log(line());
+for (const n of [10000, 20000, 50000]) {
+  const c = simulate(n, SCENARIOS.p90);
+  console.log(`  ${String(n).padStart(6)} pages: ${k(c.total).padStart(7)} views/mo  ->  ` +
+    `${money(c.display).padStart(8)} display  +  ${money(c.affiliate).padStart(8)} affiliate  =  ${money(c.revenue).padStart(9)}/mo`);
 }
-const lo = (v) => (v / 1000) * 12 + v * 0.006;
-const hi = (v) => (v / 1000) * 30 + v * 0.015 + 1000;
+
+console.log('\n' + line());
+console.log('  EFFECTIVE HOURLY RATE (the number nobody computes)');
+console.log(line());
+console.log('  Scenario                      Cumulative 24mo       Hours        $/hr');
+console.log(line());
+const hours = { p10: 1400, p50: 1500, p90: 1600 };
+const cum = { p10: 4000, p50: 27000, p90: 180000 };
+for (const key of ['p10', 'p50', 'p90']) {
+  console.log(`  ${SCENARIOS[key].label.padEnd(30)} ${money(cum[key]).padStart(14)} ${String(hours[key]).padStart(11)} ${('$' + (cum[key] / hours[key]).toFixed(0)).padStart(11)}`);
+}
 console.log('');
-console.log(`  TOTAL realistic range @ 500k views/mo:  ${money(lo(500000))} – ${money(hi(500000))} / month`);
-console.log(`  TOTAL realistic range @ 1M views/mo:    ${money(lo(1000000))} – ${money(hi(1000000))} / month`);
+console.log('  The expected value is carried almost entirely by the p90 tail.');
+console.log('  If you are not prepared to be in the p90 column, do not start this.');
 console.log('');
-console.log('  Ad-network gates crossed along the way:');
-console.log('    Mediavine  (50k sessions/mo)  -> ~month 5-6   (RPM roughly doubles)');
-console.log('    Raptive    (100k sessions/mo) -> ~month 8-10  (RPM roughly triples vs entry)');
-console.log('');
-console.log('  NOTE: 500k-1M views/mo is a 12-24 month build, not a 90-day one.');
-console.log('  Intermediate milestones still pay: ~$500/mo at 30k views, ~$3k/mo at 150k.');
-console.log('');
+

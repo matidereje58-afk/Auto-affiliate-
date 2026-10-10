@@ -1,269 +1,249 @@
 # VOLUME-PLAY.md
-## The idea that clears 500k–1M views/month
+## The idea that can clear 500k–1M views/month — and the corrections that got it there
 
 ---
 
-## 0. The requirement changes the architecture
+## 0. What changed, and why you should trust the rest of this document more because of it
 
-You asked for an idea that can reach **500k–1M views per month**. That is a different problem from "a novel idea." It is a *volume* problem, and it kills 95% of clever concepts before they start.
+I built a first version of this play and had it attacked by a hostile reviewer. **It died on two counts, and one was fatal.** I lead with that because a strategy document that has never been falsified is a sales pitch, not a strategy.
 
-Here is the honest arithmetic. Views come from one of exactly four sources:
+| # | What I claimed | What was wrong | Status |
+|---|---|---|---|
+| **1** | "Compute severity-adjusted complaints **per 1,000 vehicle-years** on the road." | **The denominator does not exist for free.** FHWA Highway Statistics publishes registrations by **state × body type** (MV-1: auto / bus / truck / motorcycle). It does **not** publish make/model/year counts. That data is an enterprise licence — S&P Global Mobility (Polk), Experian Automotive, J.D. Power. No free tier, no API, no workaround. | ☠️ **FATAL — auto vertical killed** |
+| **2** | "5,000 pages ≈ 531k views/month; 10,000 ≈ 1.07M." | The model used a **plain lognormal** with median 40 views/page. A plain lognormal has **no mass at zero** — it silently assumed the worst half of a 10,000-page inventory still averages ~17 views/month. Real programmatic long-tail on a new domain is **zero-inflated**: most pages are never selected for the index at all. | 🔧 **Fixed — see §1** |
+| **3** | "A number that exists nowhere else is not 'scaled content.'" | Wishful. Google's March-2024 policy says *"regardless of how it's produced."* The classifier reads the **rendered page shape**, not your methodology. | 🔧 **Fixed — see §6** |
+| **4** | "$20–40 RPM in this vertical." | I conflated **advertiser CPC** with **publisher RPM**. $20–40 is what an insurer pays per *click*. Publisher RPM is roughly **$6–12 entry / $15–25 mid / $20–35 top tier**. | 🔧 **Fixed — see §8** |
+| **5** | "Reporting the government's own records — low legal risk." | Publishing a **severity-weighted ranking of named manufacturers** built from **unverified self-reported complaints** is trade-libel exposure. NHTSA's own disclaimer: complaints are unverified allegations. Truth is a defence; defending it costs $50k+. | 🔧 **Fixed — see §4** |
 
-| Source | Ceiling at $0 | Reaches 1M/mo? |
-|---|---|---|
-| **Viral social** (TikTok/IG/X) | Huge spikes, 48-hour half-life, no accumulation | ❌ Never *sustained* — and you don't own it |
-| **Community launch** (HN/Reddit) | 10k–30k sessions, decays 85% in 72h | ❌ One-time |
-| **Direct/return** (tool people use weekly) | Grows with the audience you already have | 🟨 Yes, but only after you have the audience |
-| **Long-tail search** (thousands of pages, each with a small permanent stream) | **Unbounded** — it's a function of page count × ranking | ✅ **The only $0 path to 1M/month** |
-
-> **The volume equation:**
-> `views/month ≈ pages × (share of pages that rank) × (mean views per ranking page)`
-
-To hit **1M views/month** you need roughly **10,000 pages** averaging **~100 views/month** each. There is no version of this that works with 30 beautiful articles. **The architecture must be a page factory with a real dataset behind it** — and that dataset is what separates this from spam.
-
-So the design constraint is not "be novel." It is: **"be novel *in a way that scales to 10,000 pages without getting you deleted.*"**
+**Corrections 1 and 2 together mean my first answer was ~10–20× optimistic on traffic, in a vertical that could not be built at all.** Everything below is the corrected version. The *method* survived; the *deployment* did not.
 
 ---
 
-## 1. The one trick: normalization
-
-Here is the single smartest move available to a $0 operator in 2026.
-
-**Almost every public dataset on earth is published as raw counts — and raw counts are almost always misleading, because they are not normalized for exposure.**
-
-Examples, all free, all public, all published as raw counts:
-
-| Dataset | Raw count published | What nobody publishes |
-|---|---|---|
-| NHTSA vehicle complaints | "1,204 complaints" | complaints **per 1,000 vehicle-years on the road** |
-| CMS hospital data | "38 complications" | complications **per 1,000 procedures** |
-| City 311 / code violations | "412 violations" | violations **per 1,000 parcels** |
-| Airline DOT reports | "9,300 mishandled bags" | mishandled bags **per 1,000 passengers** |
-| CPSC recalls | "17 recalls" | recalls **per 1,000 units sold** |
-
-Raw counts are biased by **popularity**. A best-selling car will always have the most complaints. A big hospital will always have the most complications. This means the raw-count version of every one of these questions is **wrong**, and everyone is publishing it anyway.
-
-**Normalization is free to compute, impossible to copy without doing the work, produces a number that exists nowhere else, and frequently inverts the conventional wisdom** — which is exactly what makes it a press story.
-
-And it is the thing that saves you from Google's scaled-content-abuse policy, because:
-
-> **A page whose central number exists nowhere else on the internet is not "scaled content." It is original research.** 10,000 pages of original research is a data business. 10,000 pages of rewritten text is spam.
-
-That distinction is the whole business.
-
----
-
-## 2. FAULTLINE — the flagship deployment
-
-> **"What actually goes wrong with this car — per 1,000 on the road."**
-
-**The insight that makes it novel:** every car-complaints site on the internet shows you **raw complaint counts**. That is a popularity contest, not a reliability measure. The Honda Civic has more complaints than a Maserati because there are 200× more Civics. Everyone shows you the misleading number.
-
-**Faultline computes the honest one:**
-
-```
-SACR = Σ(complaint severity weight) / (vehicle-years on the road) × 1,000
-```
-
-- **Severity weight** — a complaint flagged as a crash, fire, or injury weighs 5×; a transmission failure weighs 3×; a rattle weighs 1×. (NHTSA complaint records carry these flags.)
-- **Vehicle-years on the road** — annual registrations summed across the model-year's life (FHWA data), which is the correct exposure denominator. Registrations alone over-count new cars; vehicle-years correct for it.
-- **Result:** a number that ranks a 2014 Nissan Altima differently from how every other site ranks it — and is *defensible* when challenged.
-
-**Why this specific vertical clears 500k–1M views/month:**
-
-| Factor | Detail |
-|---|---|
-| **Query space** | "2014 Ford Focus problems", "is a 2018 Civic reliable", "years to avoid", "transmission problems" — a top-5 auto query class |
-| **Long tail** | ~250 models × 25 model-years = **6,250 vehicle-years**, each a real query |
-| **Ad value** | Auto insurance ($15–40 CPC), auto loans, extended warranties, repair estimates → **$20–40 RPM**, not $5 |
-| **Data cost** | **$0** — NHTSA complaints/recalls/VIN APIs and FHWA registrations are free and require no key |
-| **Freshness** | New model years, new recalls, and new complaints arrive **every single week** forever |
-| **Retention** | People own a car for years. Recalls are urgent. A "my garage" watchlist brings them back. |
-| **Legal risk** | **Low.** Public data, disclosed methodology, no advice, no YMYL, no defamation (you report the government's own records) |
-| **PR hook** | An annual "Least Reliable Cars, normalized" index that **contradicts** the popular list |
-
-**Inventory: ~16,400 addressable pages** (see `tools/traffic-model.mjs`) — comfortably past the 10,000 needed for 1M views/month.
-
----
-
-## 3. The architecture — four layers
-
-```
-┌─ LAYER 1 · INGEST ─────────────────────────────────────────────┐
-│  GitHub Actions cron (free) pulls free public APIs weekly:      │
-│   • NHTSA complaints    api.nhtsa.gov      (no key)             │
-│   • NHTSA recalls       api.nhtsa.gov      (no key)             │
-│   • VIN decode          vpic.nhtsa.dot.gov (no key)             │
-│   • FHWA registrations  (annual, free)                          │
-│  Output: raw/*.json committed to the repo. Cost: $0.            │
-└────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─ LAYER 2 · NORMALIZE ──────────────────────────────────────────┐
-│  The moat. Computes SACR per vehicle-year: severity-weighted    │
-│  complaints ÷ vehicle-years on road × 1000.                     │
-│  Also: rank, percentile, YoY delta, cohort position.            │
-│  Output: data/metrics.json — ~6,250 rows of original numbers.   │
-│  THIS FILE IS THE ASSET. Nobody else has it.                    │
-└────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─ LAYER 3 · GENERATE ───────────────────────────────────────────┐
-│  A static-site generator renders 10,000+ pages from             │
-│  metrics.json. Each page = a real chart, the normalized number, │
-│  the raw count for contrast, the top 5 faults, the recall list, │
-│  and an "add to my garage" button. Zero per-page human labour.  │
-│  Output: static HTML → Cloudflare Pages. Hosting cost: $0.      │
-└────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─ LAYER 4 · RETAIN ─────────────────────────────────────────────┐
-│  "My garage": users add their car → recall alerts + SACR trend  │
-│  + an embeddable live badge. This is the Queue Engine from the  │
-│  other docs, repurposed as the retention layer.                 │
-│  Converts anonymous search traffic into an owned email list.    │
-└────────────────────────────────────────────────────────────────┘
-```
-
-**Layers 2 and 4 matter more than layer 3.** Anyone can generate 10,000 HTML files. Layer 2 is the number nobody else has; layer 4 is the audience nobody can take from you.
-
----
-
-## 4. The survival question: how this avoids Google's scaled-content-abuse policy
-
-This is the biggest risk in the whole plan, and it is where naive programmatic SEO dies.
-
-Google's March 2024 spam policies target **"scaled content abuse"** — mass-producing pages *primarily to manipulate rankings*, regardless of whether a human or an AI wrote them. The escape hatch is stated in Google's own guidance: programmatic pages are fine when **each page carries unique, valuable data** (the Zillow / Tripadvisor pattern).
-
-So every Faultline page must pass all six tests:
-
-1. **A number that exists nowhere else.** SACR, its rank, its percentile, its YoY delta. Not a rewritten paragraph — a computed statistic.
-2. **A real dataset behind it.** 1,204 individual complaint records aggregated, not an LLM's impression of them.
-3. **Disclosed methodology.** A public `/methodology` page explaining severity weights and the exposure denominator, so the number is *checkable*.
-4. **Honest sample sizes.** Pages below n=30 complaints render "insufficient data" rather than fake precision. This is also what survives a manual review.
-5. **Corroborating primary data.** Every page shows the raw NHTSA counts and links to the source records — the page is a *better way to read a government dataset*, not a substitute for one.
-6. **A tool, not just a page.** The garage watchlist gives the page a function. Functional pages are treated as products, not content.
-
-> **If a page cannot pass all six, do not publish it.** 6,000 defensible pages beat 16,000 that get the whole domain demoted.
-
----
-
-## 5. The traffic math (verified, not asserted)
+## 1. The corrected answer to "500k–1M views/month"
 
 Run it yourself: `node tools/traffic-model.mjs`
 
-Page traffic is modelled as lognormal — **median page = 40 views/month**, σ = 1.4. Deliberately conservative: half of all pages do worse than 40.
+The corrected model has **three gates** a page must pass before it earns a single view — and the honest uncertainty lives in gates 1 and 2, not in optimism about gate 3:
 
 ```
-  pages      total views/mo    p50 page   p99 page   best page
-     500            56k           36        1231        3894
-   1,000           116k           39        1298        3894
-   2,500           278k           37        1152        4555
-   5,000           531k           38        1074        9883
-  10,000         1,074k           38        1056        9883
-  15,000         1,620k           38        1065       13277
+published  ->  indexed  ->  ranking  ->  views
 ```
 
-**500k views/month needs ~5,000 pages. 1M needs ~10,000.** The top 10 pages are only ~5% of traffic — a *broad, thin* profile, which is what you want, because it cannot be destroyed by one algorithm update the way a 20-article site can.
-
-**With indexing and ranking lag applied:**
-
-```
-  month  pages live  ranking  effective   views/mo
-      3         600      45%        270        29k
-      6       1,800      60%      1,080       115k
-      9       3,200      70%      2,240       239k
-     12       5,000      78%      3,900       416k
-     15       7,000      82%      5,740       612k   ← 500k crossed
-     18       9,000      85%      7,650       815k
-     24      12,000      88%     10,560     1,125k   ← 1M crossed
-```
-
-> **The honest headline: 500k–1M views/month is a 12–24 month build, not a 90-day one.** Anyone who says otherwise is selling a course. But the *intermediate* milestones pay: ~$500/mo at 30k views, ~$3k/mo at 150k views. You are not waiting two years for your first dollar — you are climbing a staircase where every step is a raise.
-
-
----
-
-## 6. Distribution: one dataset, five surfaces
-
-Relying on Google alone is how sites die. The same `metrics.json` feeds five surfaces, so a single algorithm update cannot take the business to zero:
-
-| # | Surface | What it produces | Cost |
-|---|---|---|---|
-| 1 | **Search (programmatic)** | 10,000 pages × ~100 views | $0 — the volume engine |
-| 2 | **AI answer engines (AEO)** | Being the cited source in AI Overviews, Perplexity, ChatGPT. Structure every page with a clean "methodology", explicit dates, sample sizes, and a stable URL. As click-through falls, *citation* becomes the distribution. | $0 |
-| 3 | **Community** | Car forums and r/cars **love original data** and are link-tolerant when you bring a number rather than a pitch. Post the normalized finding, not the link. | $0 |
-| 4 | **Short-form video** | Every chart is a 20-second Short/Reel: *"Everyone says this car is reliable. Normalized, it's the worst."* Same dataset, entirely new surface, and it's the cheapest top-of-funnel that exists. | $0 |
-| 5 | **Press** | The annual **Normalized Reliability Index**. "The most reliable car isn't the one you think" is a story every auto outlet runs. Journalists need citable numbers and do not care about your traffic. | $0 |
-
-Plus **6 — embeds**: the garage badge, embedded in forum signatures and owners' club pages. Permanent, self-replicating, free.
-
-> **Note the shape:** surfaces 3, 4 and 5 exist *because* you have a novel number. Normalization is not just a content strategy — it is the PR strategy and the social strategy at the same time.
-
----
-
-## 7. The moat: three layers that compound
-
-| Layer | Can a funded competitor buy it? | Why |
-|---|---|---|
-| **The dataset** | Partially — the raw inputs are public | But **SACR is a computed series**. To match you they must build the whole normalization pipeline, and they must do it *every week forever* or fall behind. |
-| **The history** | **No** | You cannot buy 3 years of weekly complaint/recall deltas. Time is the one input with no substitute, and you start accruing it on day one. |
-| **The garage list** | **No** | People who have told you which car they own, and who expect a recall alert. That is an owned, high-intent audience in a category with $20–40 RPM. |
-| **Embeds** | **No** | Every badge is a node on someone else's property that you did not pay for. |
-
-**The honest weakness:** in months 1–6, before the history and the garage list exist, this is cloneable. Your defence in that window is **speed and volume** — publish 2,000 pages before anyone notices the category is winnable.
-
-
----
-
-## 8. The money at volume
-
-Volume changes the *kind* of business this is. At 30k views/month it is a hobby that pays for coffee. At 500k–1M it is a real asset.
-
-| Rail | 500k views/mo | 1M views/mo | Notes |
-|---|---|---|---|
-| Display @ $12 RPM (entry: AdSense/Ezoic) | $6,000 | $12,000 | Available from month 2 |
-| Display @ $20 RPM (mid: Mediavine, 50k sessions) | $10,000 | $20,000 | Crossed ~month 5–6 |
-| Display @ $30 RPM (Raptive, 100k sessions) | $15,000 | $30,000 | Crossed ~month 8–10 |
-| Affiliate / lead-gen @ $0.006–0.015/view | $3,000–7,500 | $6,000–15,000 | Insurance quotes, warranty, repair, parts |
-| Index sponsorship (flat) | $1,000 | $1,000+ | Sells once the Index is cited |
-| **Realistic total** | **$9,000 – $23,500/mo** | **$18,000 – $46,000/mo** | |
-
-**Why the RPM is the whole game.** The same 1M views are worth ~$4,000 on a general-interest site and ~$30,000 here, because auto-insurance advertisers bid $15–40 per click. **The vertical choice is worth 5–7× more than any traffic tactic.** That is the same lesson as `STRATEGY.md` §1.2, now applied at scale.
-
-**The floor matters too:** display ads are a *passive* rail that keeps paying while you sleep. Affiliate requires intent routing. Sponsorship requires sales. Build the passive rail to cover your costs, and treat the active rails as upside.
-
----
-
-## 9. Risks, stated plainly
-
-| Risk | Severity | Mitigation |
-|---|---|---|
-| **Google scaled-content / helpful-content penalty** | **Business-killer** | The six tests in §4. Publish nothing that fails them. Diversify to surfaces 2–5 so a demotion is survivable. |
-| **Timeline illusion** — quitting at month 4 because it's "only" 30k views | **High** | Internalise the staircase in §5. Month 4 is supposed to look like that. |
-| **NHTSA API changes / rate limits** | Medium | Cache every response into the repo; the dataset becomes yours, and the pipeline degrades gracefully. |
-| **Normalization is challenged on methodology** | Medium | Publish the methodology, show sensitivity analysis (does the ranking change under different weights?), and accept corrections publicly. Being *checkable* is the moat. |
-| **Ad-network rejection** | Medium | Ezoic has no traffic minimum. Never let ads be a month-1 dependency. |
-| **Content quality drift** — the generator starts emitting thin pages to hit page counts | **High** | Hard rule: below n=30 complaints, the page does not exist. Fewer, better pages. |
-| **Founder burnout at 12–24 months** | **High** | The intermediate milestones pay. Track revenue, not views. If month 9 revenue is under $1,000/mo, stop adding pages and fix the funnel. |
-
----
-
-## 10. The engine is portable — five other verticals that also clear 500k
-
-The normalization trick is not a car trick. It is a **method**. The same pipeline works on any free dataset published as misleading raw counts:
-
-| Vertical | Raw count everyone publishes | The normalized metric nobody publishes | Long tail | Ad value |
+| Scenario | Indexed | Of indexed, % ranking | Views/page (ranking) | RPM |
 |---|---|---|---|---|
-| **Used-car reliability** ⭐ | complaints | severity-adjusted complaints per 1,000 vehicle-years | 6,250 vehicle-years | $20–40 RPM |
-| **Hospital & surgeon outcomes** | complications | complications per 1,000 procedures, risk-adjusted | 5,000+ hospitals | $30–60 RPM |
-| **City infrastructure & safety** | 311/code violations | violations per 1,000 parcels or lane-miles | 3,000+ cities | $15–30 RPM |
-| **Airline & airport performance** | mishandled bags | bags per 1,000 passengers; delay minutes per 1,000 flights | 500 airports × 20 airlines | $15–25 RPM |
-| **Product safety & recalls** | recalls | recalls per 1,000 units sold | 20,000+ products | $15–30 RPM |
-| **School & district outcomes** | test scores | growth per 1,000 students, adjusted for intake | 13,000+ districts | $25–50 RPM (real estate) |
+| **p10** demoted / ignored | 30% | 12% | median 25 | $6 |
+| **p50** indexed, half-ranking | 55% | 25% | median 40 | $15 |
+| **p90** clean index, ranks well | 75% | 45% | median 60 | $28 |
 
-**Launch on used-car reliability** — highest CPC-to-legal-risk ratio, a genuinely massive query space, and a dataset with no key and no cost.
+**How many pages you actually need:**
+
+```
+  target              p10 (pages)      p50 (pages)      p90 (pages)
+  100k views/mo            30,893            5,903            1,853
+  250k views/mo            77,233           14,757            4,633
+  500k views/mo           154,465           29,514            9,267
+  1.00M views/mo          308,930           59,028           18,534
+```
+
+**Read that slowly, because it is the whole correction:**
+
+> **1M views/month needs ~18,500 pages at top-decile execution, ~59,000 at median execution, and ~309,000 at bottom-decile.** My first answer said 10,000. It was wrong by an order of magnitude.
+
+And the revenue, corrected:
+
+```
+  10,000 pages, p90:    529k views/mo  ->  $14,812 display + $7,935 affiliate  =  $22,747/mo
+  20,000 pages, p90:   1.09M views/mo  ->  $30,428 display + $16,300 affiliate =  $46,728/mo
+  10,000 pages, p50:    183k views/mo  ->                              $4,210/mo
+  10,000 pages, p10:     40k views/mo  ->                                $397/mo
+```
+
+**The honest verdict on your requirement:** 500k–1M views/month is **reachable, but only as a 24–36 month build at 18,500–59,000 pages, and only with top-decile execution.** It is not a side hustle. The same effort at p50 yields ~180k views and ~$4,200/month — a good outcome, and the case you should *plan* for while designing for p90.
 
 ---
 
-## 11. The one-paragraph version
+## 2. The filter that actually matters: **the denominator must be free**
 
-Stop trying to write your way to traffic. **Normalize a free public dataset into a number that exists nowhere else**, generate **10,000 defensible pages** from it — each one passing the six tests so Google treats it as original research rather than scaled content — and monetise it in a vertical where a click is worth $20–40 rather than $3. Then bolt the **garage watchlist and badge** on top so the audience becomes something you own instead of something you rent. The volume target is not a vanity metric: it is what turns a $300/month hobby into a **$18,000–46,000/month asset** in 12–24 months, at a hard cost of $0.
+This is the single most valuable thing the red team produced, and it generalises far beyond cars.
+
+Every "normalize public data" idea lives or dies on one question:
+
+> **Is the exposure denominator — the thing you divide by — freely obtainable?**
+
+Almost every dataset publishes the numerator (the counts) and hides the denominator (the exposure). **The numerator is the press release; the denominator is the product.**
+
+| Dataset | Numerator (free) | Denominator | Free? |
+|---|---|---|---|
+| NHTSA vehicle complaints | ✅ complaints by make/model/year | make/model/year registrations | ❌ **S&P Global / Experian, $50k–500k/yr** |
+| CPSC recalls | ✅ recalls | units sold | ❌ commercial |
+| CMS hospital data | ✅ complications | ✅ **discharges, patient-days** | ✅ **free** |
+| BTS aviation | ✅ delays, mishandled bags | ✅ **departures, seats, passenger-miles** | ✅ **free** |
+| NCES education | ✅ test scores | ✅ **enrollment** | ✅ **free** |
+| FBI crime data | ✅ offences | ✅ **population** | ✅ **free** |
+| SEC / EDGAR | ✅ filings | ✅ **shares outstanding** | ✅ **free** |
+| City 311 / code enforcement | ✅ violations | ✅ **parcels, lane-miles** | 🟨 varies by city |
+| FAA aircraft registry | ✅ registrations | ✅ **aircraft by make/model** | ✅ **free** |
+
+> **Rule: if the denominator is not free, the metric cannot be computed and the idea does not exist — no matter how clever it is.** My auto play violated this rule, so it was never a business. Test every idea against this table *before* writing code.
+
+---
+
+## 3. Vertical selection, corrected
+
+Scored on the filters that actually decide the outcome.
+
+| Vertical | Free denominator? | Metric novel? | Winnable vs incumbents? | Publisher RPM | Legal risk | **Verdict** |
+|---|---|---|---|---|---|---|
+| **Aviation ops** (BTS T-100 + On-Time + ATCR) | ✅ **yes** | Airport-level yes; **carrier × route × equipment-type cuts are enterprise-paywalled** (Cirium/OAG/FlightStats) | ✅ **strong** — nobody posts "AA1234 A321 on-time rate" | $12–20 display, **+ travel credit-card affiliate $50–200/approval** | ✅ **low** — DOT already ranks carriers publicly | ⭐ **BUILD THIS** |
+| **Education** (NCES CCD) | ✅ yes | partly | ❌ GreatSchools / Niche / US News / SchoolDigger entrenched | $25–50 (real-estate) | 🟨 named schools, parent complaints | high volume, hard to win |
+| **Hospitals** (CMS) | ✅ yes | partly (Care Compare exists) | 🟨 | $20–40 | ❌ **high** — named institutions, YMYL, defamation | good money, bad risk |
+| **Cities / neighbourhoods** (Census, FBI) | ✅ yes | partly | ❌ NeighborhoodScout / AreaVibes / Niche | $15–30 | 🟨 | crowded |
+| **SEC / EDGAR** | ✅ yes | partly | ❌ saturated | $20–40 | ❌ YMYL | no |
+| **Auto reliability** (my v1) | ❌ **NO** | — | — | — | ❌ trade libel | ☠️ **dead on §2** |
+| **CPSC recalls** | ❌ no units-sold denominator | — | — | — | 🟨 | ☠️ same flaw as auto |
+
+**Corrected pick: aviation operations.**
+
+Why it clears every filter: the denominators are genuinely published and free; the useful cuts (carrier × route × aircraft type) are locked inside enterprise platforms so consumer SEO is wide open; there is **no Reddit/forum dominance** because nobody writes forum posts about on-time rates; legal risk is low because the DOT already publishes carrier rankings and you are re-cutting official data; and the affiliate value (travel credit cards, travel insurance) is among the highest available anywhere.
+
+**The metric** — the same normalization trick, with a denominator that exists:
+
+```
+Route Reliability Score =
+   (delay minutes + 5 × cancelled flights + 25 × tarmac-delay events)
+   ÷ departures
+   × 1,000
+```
+
+Plus, per aircraft type and per carrier × route: **delay minutes per 1,000 departures**, **mishandled bags per 1,000 passengers**, and **% of flights delayed >45 min**. All computable from free BTS tables, and the carrier × route × equipment-type cut is not published anywhere in consumer form.
+
+**The honest caveat:** aviation's search volume is lower than education or crime. It will not reach 1M views/month on its own — realistically **100k–300k views/month at maturity**. Which is exactly why §7 exists.
+
+
+---
+
+## 4. The two rules that keep you alive
+
+### Rule 1 — Never publish a severity-weighted ranking of a named private entity
+
+This is what killed v1's legal position. Aggregating **unverified, self-reported allegations** and then applying **your own severity weights** to produce a ranking of named companies is trade libel / product disparagement. Truth is a defence; defending it costs more than the business is worth.
+
+**What to do instead:**
+
+- Rank **operational outcomes from official, verified datasets** (DOT on-time performance is a *measured fact*, not an allegation). ✅
+- If you must use complaint data, **never apply your own severity weighting to a named entity** — publish the raw counts and the ratio, attributed explicitly.
+- Always show **n**, always link the primary source, always state that the data is as-published.
+- Standing disclaimer: *"Data is reproduced from official [agency] datasets. We do not independently verify it. No affiliation with, or endorsement by, any entity named."*
+- **Never assert intent.** "Airline X is deliberately slow" is a different legal object from "Airline X's flights were delayed an average of 21 minutes."
+
+### Rule 2 — Google classifies the *shape* of the page, not your intentions
+
+The March-2024 spam policy applies *"regardless of how it's produced."* A unique computed number does **not** automatically exempt you. The classifier sees: N thousand URLs, one template, a handful of swapped fields, ~400 words, 3 ad units. **That shape is the problem.**
+
+**Shape, not count, is the variable you control.** A page that is *structurally different* from its siblings — an interactive tool, a real chart of the underlying series, a genuinely different table, original interpretation — reads as a product. A page that swaps five fields into a fixed sentence template reads as a farm.
+
+**Per-page test:** if you deleted this page, would anyone lose access to something they cannot get elsewhere? If the answer is "no — the same number is on 400 sibling pages," **do not publish it.**
+
+---
+
+## 5. The corrected architecture
+
+```
+┌─ 1 · INGEST ───────────────────────────────────────────────────┐
+│  GitHub Actions cron (free) -> free, keyless public APIs:       │
+│   • BTS T-100 segment (departures, seats, passenger-miles)      │
+│   • BTS On-Time Performance (delay minutes, cancellations)      │
+│   • DOT Air Travel Consumer Report (tarmac delays, bags)        │
+│  Output: raw/*.json committed to the repo. Cost: $0.            │
+└────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─ 2 · NORMALIZE  (the moat) ────────────────────────────────────┐
+│  Route Reliability Score, delay-minutes per 1,000 departures,   │
+│  cut by carrier x route x aircraft type. Rank, percentile,      │
+│  YoY delta, and a sensitivity check under alternate weights.    │
+│  Output: data/metrics.json. Nobody else publishes this cut.     │
+└────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─ 3 · GENERATE  (shape-differentiated, NOT a template farm) ────┐
+│  • 1 flagship Index page (the citable, press-facing artifact)   │
+│  • 1 interactive route/carrier lookup tool (the product)        │
+│  • ~200-300 hand-differentiated entity pages with real charts   │
+│  • THEN scale to 2,000-5,000 only where the data supports it    │
+│  Static HTML -> Cloudflare Pages. Cost: $0.                     │
+└────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─ 4 · RETAIN ───────────────────────────────────────────────────┐
+│  "My flights": track a route -> delay alerts + a live badge.    │
+│  Converts anonymous search traffic into an owned email list.    │
+│  (This is IDEA.md's Queue Engine, used as the retention layer.) │
+└────────────────────────────────────────────────────────────────┘
+```
+
+**The correction that matters most:** the red team's highest-leverage recommendation was **"do not build 10,000 pages — build 200–300, and make the metric an interactive tool."** That is right *for a single site*, because page count is not the lever — **index selection and links** are. §6 is how you get to 1M anyway.
+
+
+---
+
+## 6. How you actually reach 500k–1M views/month
+
+The honest synthesis, and the answer to your requirement:
+
+> **You reach 500k–1M views/month as a PORTFOLIO of normalization sites, not as one site.**
+
+§1 says 1M/month needs 18,500–59,000 pages. Nobody should build one 60,000-page site — that shape is exactly what gets classified as a farm. But **six sites of 3,000–10,000 pages each**, in six verticals, each with its own free-denominator metric and its own brand, is:
+
+- **individually defensible** — each is a focused data product, not a 60,000-page farm;
+- **individually survivable** — an update that hits one does not hit all;
+- **cumulatively 1M+ views/month**;
+- and **near-zero marginal cost**, because it is the same pipeline re-skinned. That was the original thesis all along.
+
+| Phase | Months | What you build | Target |
+|---|---|---|---|
+| **1** | 0–6 | One vertical (aviation ops). 1 Index + 1 tool + 200–300 differentiated pages. Get indexed, get links, get a sponsor. | 5k–20k views/mo |
+| **2** | 6–12 | Scale that vertical to 2,000–5,000 pages *where the data supports it*. Add the retention layer. | 50k–150k views/mo |
+| **3** | 12–24 | **Re-skin to vertical #2 and #3.** Same pipeline, new denominator, new brand. | 200k–500k views/mo |
+| **4** | 24–36 | Verticals #4–#6. Portfolio diversification. | **500k–1M+ views/mo** |
+
+**This is why the portability of the engine matters more than the choice of vertical.** A blogger who fails in aviation starts from zero in education. You start at 80% — same ingest, same normalize, same generator, same badge, same ad stack. **Portability converts a failed vertical from a loss into a cost of learning.**
+
+---
+
+## 7. Corrected economics
+
+| | p10 | p50 | p90 |
+|---|---|---|---|
+| Pages at month 24 | ~2,000 | ~5,000 | ~20,000 |
+| Views/month | ~10k | ~180k | ~1.09M |
+| Monthly revenue | ~$60 | ~$4,200 | ~$46,700 |
+| Cumulative 24-month revenue | **$4,000** | **$27,000** | **$180,000** |
+| Hours invested | 1,400 | 1,500 | 1,600 |
+| **Effective $/hour** | **$3** | **$18** | **$113** |
+
+**Stated plainly:** the expected value of this play is carried almost entirely by the p90 tail. At the median you earn **~$18/hour** over two years — worse than most part-time work, and only worth it because the asset keeps paying after you stop and the engine re-skins.
+
+**The three things that move you from p50 to p90:**
+
+1. **Index selection.** Getting pages actually indexed is worth more than getting more pages. Instrument `indexed ÷ published` from week one.
+2. **Links.** 20–50 real referring domains (data-driven PR, the Index, embeds) is what separates p90 from p50. Page count is not the lever.
+3. **The affiliate rail.** At p90, affiliate is ~35% of revenue. Pick verticals with high-value affiliate (travel credit cards: $50–200 per approval) rather than display-only verticals.
+
+---
+
+## 8. Kill criteria — pre-committed
+
+| Gate | When | Threshold | If it fails |
+|---|---|---|---|
+| G1 | Month 3 | ≥150 pages live and ≥25% indexed | The pipeline is broken, not the market. Fix ingestion/templates. |
+| G2 | Month 6 | ≥1,000 sessions/month organic | Vertical is wrong. **Do not add pages.** Re-skin. |
+| G3 | Month 9 | **≥3,000 sessions/month OR ≥30% indexed** | Vertical is wrong — keep the pipeline, re-skin. *(This gate comes directly from the red team.)* |
+| G4 | Month 12 | ≥$500/month revenue | Monetisation is wrong. Switch to affiliate-first. |
+| G5 | Month 24 | ≥$3,000/month | Portfolio is not compounding. Stop adding verticals; fix the one that works. |
+
+> **Page count is not the lever.** If G2 or G3 fails, adding 5,000 more pages makes things *worse* — it deepens the farm shape that is suppressing your index rate.
+
+---
+
+## 9. The verdict, in one paragraph
+
+Your requirement is achievable, and the corrected architecture is: **normalize a free dataset whose denominator is genuinely free, publish it as one citable Index plus one interactive tool plus a few hundred shape-differentiated pages, earn links rather than page count, then re-skin the identical pipeline into five more verticals until the portfolio clears 500k–1M views/month.** At top-decile execution that is **$46,000/month by month 24**; at median execution it is **$4,200/month**; and at bottom-decile it is **$3/hour and you should quit at gate G3**. The idea is novel, the method is sound, and the honest timeline is **24–36 months, not 90 days** — which is the part everyone selling you a shortcut leaves out.
 
