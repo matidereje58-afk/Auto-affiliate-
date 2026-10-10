@@ -286,6 +286,18 @@ One relationship is worth more than 100 Reddit upvotes.
 2. **"No signup, no app, no fees. Send one link, every guest gets their own pass."** → the wedge against every incumbent.
 3. **"Print one QR card, put it on the table — 100 guests find their seats in 4 seconds."** → the day-of utility (this is the one venues and planners forward).
 
+### Link hygiene on the loop footer (verified policy detail — do not skip this)
+
+Google's link-spam policy lists these as examples of link spam, verbatim:
+
+> "**Keyword-rich, hidden, or low-quality links embedded in widgets that are distributed across various sites**" and "**Widely distributed links in the footers or templates of various sites**" — [Google Search spam policies, link spam](https://developers.google.com/search/docs/essentials/spam-policies#link-spam) (verified, page last updated 2026-08-28)
+
+**What this means for you:** the footer loop is legitimate when the page is *your own generated page* on *your own domain* and the link is a normal, visible, single CTA — not a keyword-stuffed "best free wedding rsvp seating chart tool" anchor. So:
+
+* One link per page, natural anchor text ("Make yours free"), never a keyword-stuffed anchor.
+* Add `rel="nofollow"` on the footer CTA if you ever syndicate the pass to a third-party domain (you should not — §5.3: ads and inventory must stay on pages you own).
+* Never ship a distributable embed that injects a followed link into other people's sites — that is the exact pattern the policy names.
+
 **Anti-patterns that will get you banned:** posting the same link to 6 subreddits on the same day; DM-spamming brides; using affiliate links in launch posts; making the first comment "check out my tool" without answering a question first.
 
 
@@ -398,12 +410,13 @@ Scored on the same rubric — **D1** day-1 reachability, **SP** self-propagation
 | AdSense: no company needed, ~80% share after platform fee, $100 payout, identity verification first | `research/ad-economics.md` §6a (Google AdSense support docs) |
 | No ads on "screens without publisher-content / low-value content", empty states, printable or behavioural screens | Google Publisher Policies via `research/ad-economics.md` §4d (verified) |
 | Ads cannot be served inside widgets embedded on third-party domains; pop-unders incompatible with AdSense | `research/ad-economics.md` §5 (verified) |
+| Link spam: "Keyword-rich, hidden, or low-quality links embedded in widgets that are distributed across various sites"; "Widely distributed links in the footers or templates of various sites" | developers.google.com/search/docs/essentials/spam-policies#link-spam (verified 2026-10-10, page updated 2026-08-28) |
 | Scaled-content-abuse policy = "user value, not authoring method" | `research/ad-economics.md` §4a (Google Search spam policies, updated 2026-08-28) |
 | Ad density ceiling 20% desktop / 24% mobile; >25% correlated with declines | Raptive Aug-2025 spam-update analysis via `research/ad-economics.md` §2a |
 | `bingobaker.com` ≈ 26.7k visitors/day, 145k pageviews/day (~4.4M pv/mo) | HypeStat + SEMrush estimates (fetched 2026-10-10) — *estimates, not audited* |
 | `baamboozle.com` ≈ 5.0M visits/month at 5.86 pages/visit | HypeStat compare page (fetched 2026-10-10) — *estimates* |
 | Free-tool demand signals: resume-ats 30 "free"-intent queries, chore-chart 25, wedding-website 21, anonymous-poll 21, rsvp 20 | Google autocomplete harvest — `research/autocomplete/` (373 query sets mined live, raw JSON kept) |
-| AI Overviews reduce clicks: Ahrefs −58%, ppc.land −61% CTR, academic study −39.8% | ahrefs.com/blog/ai-overviews-reduce-clicks-update, ppc.land, arxiv/SSRN study (fetched 2026-10-10) |
+| AI Overviews reduce clicks: Ahrefs −58% (Feb 2026 re-run, 300k keywords, Dec-2023 vs Dec-2025); earlier run −34.5% (Apr 2025); position-1 informational CTR 0.076 → 0.039; corroborated by Seer Interactive −49.4–65.2%, Kevin Indig >50%, Authoritas 47.5% | ahrefs.com/blog/ai-overviews-reduce-clicks-update/ and /ai-overviews-reduce-clicks/ (fetched 2026-10-10) |
 | The live bot-block differential test works and produces a dramatic result | my own curl test in this session: `cnn.com` → 451 (GPTBot/PerplexityBot/ClaudeBot), 200 (OAI-SearchBot, normal browser) |
 | Wedding QR/guest-tool niche is emerging, not saturated | direct inspection of `guestory.app`, `findtheseat.com`, `myguestwork`, `venued.app` (2025–26 indie tools, single-feature) |
 
