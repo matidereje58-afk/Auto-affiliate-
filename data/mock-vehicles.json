@@ -1,0 +1,70 @@
+{
+  "_disclaimer": "ILLUSTRATIVE MOCK DATA — hand-authored for this demo to show how the normalization engine works. These are NOT real NHTSA records and must not be presented as such. In production, registrationsByYear comes from FHWA registration data and the complaint buckets are aggregated from the free NHTSA complaints API (api.nhtsa.gov), which requires no key.",
+  "_schema": {
+    "registrationsByYear": "vehicles registered in each year of the model-year's life (index 0 = the model year). Sum = vehicle-years of exposure.",
+    "complaints": "counts of complaints by severity bucket, as flagged on the record.",
+    "severityWeights": { "crash_fire_injury": 5, "powertrain_failure": 3, "electrical_failure": 3, "minor": 1 }
+  },
+  "vehicles": [
+    {
+      "id": "honda-civic-2018", "make": "Honda", "model": "Civic", "year": 2018,
+      "registrationsByYear": [312000, 308000, 301000, 295000, 289000, 283000],
+      "complaints": { "crash_fire_injury": 41, "powertrain_failure": 233, "electrical_failure": 118, "minor": 402 }
+    },
+    {
+      "id": "toyota-corolla-2018", "make": "Toyota", "model": "Corolla", "year": 2018,
+      "registrationsByYear": [298000, 295000, 290000, 286000, 281000, 277000],
+      "complaints": { "crash_fire_injury": 19, "powertrain_failure": 88, "electrical_failure": 61, "minor": 240 }
+    },
+    {
+      "id": "ford-focus-2014", "make": "Ford", "model": "Focus", "year": 2014,
+      "registrationsByYear": [245000, 240000, 235000, 228000, 220000, 212000],
+      "complaints": { "crash_fire_injury": 52, "powertrain_failure": 1840, "electrical_failure": 210, "minor": 690 }
+    },
+    {
+      "id": "nissan-altima-2013", "make": "Nissan", "model": "Altima", "year": 2013,
+      "registrationsByYear": [320000, 315000, 308000, 299000, 290000, 281000],
+      "complaints": { "crash_fire_injury": 61, "powertrain_failure": 1120, "electrical_failure": 240, "minor": 810 }
+    },
+    {
+      "id": "maserati-ghibli-2016", "make": "Maserati", "model": "Ghibli", "year": 2016,
+      "registrationsByYear": [7500, 7200, 6800, 6300, 5800, 5300],
+      "complaints": { "crash_fire_injury": 9, "powertrain_failure": 62, "electrical_failure": 48, "minor": 95 }
+    },
+    {
+      "id": "land-rover-range-rover-2015", "make": "Land Rover", "model": "Range Rover", "year": 2015,
+      "registrationsByYear": [42000, 41000, 39500, 38000, 36500, 35000],
+      "complaints": { "crash_fire_injury": 27, "powertrain_failure": 210, "electrical_failure": 165, "minor": 320 }
+    },
+    {
+      "id": "tesla-model-s-2016", "make": "Tesla", "model": "Model S", "year": 2016,
+      "registrationsByYear": [48000, 52000, 55000, 57000, 58000, 59000],
+      "complaints": { "crash_fire_injury": 22, "powertrain_failure": 180, "electrical_failure": 140, "minor": 260 }
+    },
+    {
+      "id": "chevrolet-cruze-2012", "make": "Chevrolet", "model": "Cruze", "year": 2012,
+      "registrationsByYear": [215000, 210000, 203000, 196000, 189000, 182000],
+      "complaints": { "crash_fire_injury": 48, "powertrain_failure": 720, "electrical_failure": 205, "minor": 560 }
+    },
+    {
+      "id": "bmw-3-series-2015", "make": "BMW", "model": "3 Series", "year": 2015,
+      "registrationsByYear": [145000, 142000, 138000, 133000, 128000, 123000],
+      "complaints": { "crash_fire_injury": 24, "powertrain_failure": 380, "electrical_failure": 155, "minor": 420 }
+    },
+    {
+      "id": "hyundai-elantra-2017", "make": "Hyundai", "model": "Elantra", "year": 2017,
+      "registrationsByYear": [218000, 215000, 210000, 205000, 199000, 193000],
+      "complaints": { "crash_fire_injury": 30, "powertrain_failure": 290, "electrical_failure": 120, "minor": 380 }
+    },
+    {
+      "id": "jeep-grand-cherokee-2014", "make": "Jeep", "model": "Grand Cherokee", "year": 2014,
+      "registrationsByYear": [185000, 182000, 177000, 171000, 165000, 159000],
+      "complaints": { "crash_fire_injury": 45, "powertrain_failure": 640, "electrical_failure": 250, "minor": 590 }
+    },
+    {
+      "id": "subaru-outback-2017", "make": "Subaru", "model": "Outback", "year": 2017,
+      "registrationsByYear": [112000, 110000, 107000, 104000, 100000, 96000],
+      "complaints": { "crash_fire_injury": 14, "powertrain_failure": 95, "electrical_failure": 58, "minor": 210 }
+    }
+  ]
+}
