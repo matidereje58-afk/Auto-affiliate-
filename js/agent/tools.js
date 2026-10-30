@@ -114,6 +114,22 @@ export const TOOL_SPECS = [
   {
     type: 'function',
     function: {
+      name: 'run_file',
+      description:
+        'Execute a JavaScript file from the project in the sandbox, resolving its relative require() imports against the project files. Use it to test the real entry point of the app or a test suite.',
+      parameters: {
+        type: 'object',
+        properties: {
+          path: { type: 'string', description: 'Project file to run, e.g. "src/main.js"' },
+          args: { type: 'array', items: { type: 'string' }, description: 'Optional argv strings exposed as process.argv' },
+        },
+        required: ['path'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
       name: 'run_python',
       description: 'Execute Python (CPython via Pyodide; the first run downloads the runtime). Returns stdout.',
       parameters: {
@@ -224,6 +240,7 @@ const LABELS = {
   delete_file: ['Delete file', '🗑️'],
   search_files: ['Search', '🔍'],
   run_javascript: ['Run JavaScript', '⚡'],
+  run_file: ['Run file', '▶️'],
   run_python: ['Run Python', '🐍'],
   preview_html: ['Preview', '🖥️'],
   fetch_url: ['Fetch URL', '🌐'],
@@ -468,7 +485,30 @@ export function createToolRuntime({ store, onEvent = () => {}, askUser = null, c
       };
     },
 
+    async run_file(input) {
+      const path = normalizePath(input.path);
+      if (!path) return { ok: false, summary: 'Invalid path.' };
+      const files = {};
+      for (const [filePath, entry] of Object.entries(store.project.files)) {
+        files[filePath] = entry?.content ?? '';
+      }
+      if (!(path in files)) return { ok: false, summary: `File not found: ${path}` };
+      const result = await runner.run('', {
+        files,
+        entry: path,
+        argv: Array.isArray(input.args) ? input.args : [],
+      });
+      if (result.result === '{}') result.result = '';
+      const output = formatRunOutput(result);
+      return {
+        ok: Boolean(result.ok),
+        summary: clip(`Ran ${path}:\n${output}`),
+        ui: { code: files[path], output, ok: Boolean(result.ok), ms: result.ms },
+      };
+    },
+
     async run_python(input) {
+
       const code = String(input.code ?? '');
       if (!code.trim()) return { ok: false, summary: 'code is required.' };
       onEvent({ type: 'tool_status', status: 'loading Python runtime…' });

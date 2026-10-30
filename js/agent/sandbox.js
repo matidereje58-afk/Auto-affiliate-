@@ -1,3 +1,5 @@
+import { createCommonJsRuntime } from './module-loader.js';
+
 /**
  * Sandboxed JavaScript runner.
  *
@@ -9,8 +11,9 @@
  */
 
 const WORKER_SOURCE = `
+const createCommonJsRuntime = ${createCommonJsRuntime.toString()};
 self.onmessage = async (event) => {
-  const { id, code } = event.data || {};
+  const { id, code, files, entry, argv } = event.data || {};
   const logs = [];
   const fmt = (value) => {
     if (typeof value === 'string') return value;
@@ -23,8 +26,14 @@ self.onmessage = async (event) => {
   };
   const started = Date.now();
   try {
-    const factory = new Function('console', 'setTimeout', 'clearTimeout', '"use strict"; return (async () => {' + code + '\\n})();');
-    const result = await factory(sandboxConsole, () => {}, () => {});
+    let result;
+    if (entry) {
+      const runtime = createCommonJsRuntime(files || {}, sandboxConsole, { argv: argv || [] });
+      result = runtime.load(entry);
+    } else {
+      const factory = new Function('console', 'setTimeout', 'clearTimeout', '"use strict"; return (async () => {' + code + '\\n})();');
+      result = await factory(sandboxConsole, () => {}, () => {});
+    }
     self.postMessage({ id, ok: true, logs, result: fmt(result ?? ''), ms: Date.now() - started });
   } catch (error) {
     self.postMessage({
@@ -65,7 +74,7 @@ export function createRunner({ timeoutMs = 8000 } = {}) {
   };
 
   return {
-    async run(code) {
+    async run(code, { files = null, entry = null, argv = [] } = {}) {
       const instance = ensure();
       const id = ++seq;
       return new Promise((resolve) => {
@@ -76,7 +85,7 @@ export function createRunner({ timeoutMs = 8000 } = {}) {
           resolve({ ok: false, logs: [], error: { message: `Execution timed out after ${timeoutMs}ms` }, timeout: true });
         }, timeoutMs);
         pending.set(id, { resolve, timer });
-        instance.postMessage({ id, code });
+        instance.postMessage({ id, code, files, entry, argv });
       });
     },
     dispose() {

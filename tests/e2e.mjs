@@ -79,6 +79,21 @@ const STUB = `
       step += 1;
       return;
     }
+    if (step === 3) {
+      yield { type: 'tool_use', id: 'call_3b', name: 'write_file', input: { path: 'src/math.js', content: 'exports.add = (a, b) => a + b;' } };
+      step += 1;
+      return;
+    }
+    if (step === 4) {
+      yield { type: 'tool_use', id: 'call_3c', name: 'write_file', input: { path: 'src/main.js', content: "const { add } = require('./math'); console.log('sum', add(20, 22));" } };
+      step += 1;
+      return;
+    }
+    if (step === 5) {
+      yield { type: 'tool_use', id: 'call_3d', name: 'run_file', input: { path: 'src/main.js' } };
+      step += 1;
+      return;
+    }
     yield { type: 'tool_use', id: 'call_4', name: 'update_plan', input: { tasks: [
       { title: 'Scaffold index.html', status: 'done' },
       { title: 'Preview the page', status: 'done' },
@@ -136,7 +151,6 @@ try {
   await context.route('**/js.puter.com/**', (route) =>
     route.fulfill({ status: 200, contentType: 'text/javascript', body: STUB }),
   );
-  context.on('request', (request) => { if (request.url().includes('puter.com')) console.log('REQ', request.url()); });
   context.on('requestfailed', (request) => console.log('REQFAIL', request.url()));
   page = await context.newPage();
   page.on('pageerror', (error) => errors.push('pageerror: ' + error.message));
@@ -186,6 +200,9 @@ try {
   assert.ok(planItems.length >= 2, 'plan panel populated');
   const previewSrc = await page.getAttribute('#preview-frame', 'srcdoc');
   assert.match(previewSrc ?? '', /Hello WorkBuddy/, 'preview frame rendered the html');
+  await page.waitForFunction(() => document.body.innerText.includes('Run file'), null, { timeout: 25000 });
+  await page.waitForFunction(() => document.body.innerText.includes('sum 42'), null, { timeout: 25000 });
+  console.log('✓ run_file executed a multi-file project in the sandbox (require + console)');
   await page.waitForSelector('.completion-banner', { timeout: 20000 });
   const diffLines = await page.$$eval('.diff-line.add', (nodes) => nodes.length);
   assert.ok(diffLines > 0, 'a diff was shown for the written file');

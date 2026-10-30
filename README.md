@@ -47,7 +47,8 @@ Models that always reason (capability `Reasoning` in Puter's catalogue) are labe
   `tool_code` text protocol for models that don't, so *every* model can act.
 * **Tools** (`js/agent/tools.js`):
   `list_files`, `read_file`, `write_file`, `edit_file`, `delete_file`, `search_files`,
-  `run_javascript` (isolated Web Worker, 8 s budget), `run_python` (Pyodide),
+  `run_javascript` (isolated Web Worker, 8 s budget), `run_file` (executes a project file with a
+  CommonJS loader so multi-file projects and test suites run for real), `run_python` (Pyodide),
   `preview_html`, `fetch_url` (`puter.net.fetch`, no CORS), `update_plan`,
   `remember`, `ask_user`, `finish`.
 * **Safety rails**: exact-match edits (no blind overwrites), path traversal blocked,
@@ -76,6 +77,7 @@ js/lib/tokens.js         token estimation, context budget, usage parsing
 js/agent/loop.js         the agent loop + text-protocol fallback
 js/agent/tools.js        tool schemas and runtime
 js/agent/sandbox.js      Web Worker JS sandbox
+js/agent/module-loader.js CommonJS loader for run_file (require across project files)
 js/agent/prompts.js      system prompt / compaction prompt
 js/agent/verify.js       live model + effort verification
 js/ui/*.js               transcript, inspector, model picker, DOM helpers
@@ -88,8 +90,8 @@ tests/                   unit tests (node --test) + browser E2E (playwright-core
 ## Verify it yourself
 
 ```bash
-npm test                    # 51 unit tests: effort rules, catalogue, loop, tools, diff, markdown, tokens, verifier
-node tests/e2e.mjs          # headless-Chromium UI test (needs /usr/bin/chromium)
+npm test                    # 57 unit tests: effort rules, catalogue, loop, tools, module loader, diff, markdown, tokens, verifier
+npm run test:e2e            # headless-Chromium UI test (needs /usr/bin/chromium)
 npm run build:catalog       # refresh data/models.json from the live Puter API
 ```
 

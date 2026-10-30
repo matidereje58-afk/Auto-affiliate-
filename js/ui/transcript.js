@@ -250,7 +250,7 @@ export class TurnView {
     if (!ok) record.card.classList.add('failed');
     record.status.replaceChildren(el('span', { class: 'dot' }), el('span', { text: ok ? formatDuration(ms ?? Date.now() - record.startedAt) : 'failed' }));
     record.body.innerHTML = renderToolResult(name, summary, ui);
-    const keepOpen = ['write_file', 'edit_file', 'run_javascript', 'run_python', 'preview_html', 'finish', 'ask_user'];
+    const keepOpen = ['write_file', 'edit_file', 'run_javascript', 'run_python', 'run_file', 'preview_html', 'finish', 'ask_user'];
     record.body.classList.toggle('collapsed', !keepOpen.includes(name));
     const step = this.steps[this.steps.length - 1];
     if (step) Object.assign(step, { status: ok ? 'done' : 'failed', summary, ms, ui });
@@ -322,7 +322,7 @@ function renderToolResult(name, summary, ui) {
       return `<div class="diff-block">${html}</div><div class="tool-foot"><span class="ok">+${added}</span> <span class="del">−${removed}</span></div>`;
     }
   }
-  if (name === 'run_javascript' || name === 'run_python') {
+  if (name === 'run_javascript' || name === 'run_python' || name === 'run_file') {
     const output = ui?.output ?? summary ?? '';
     return `<div class="run-output"><span class="${ui?.ok ? 'ok' : 'err'}">${ui?.ok ? 'executed' : 'failed'}${ui?.ms ? ' in ' + ui.ms + 'ms' : ''}</span><pre>${escapeHtml(output)}</pre></div>`;
   }

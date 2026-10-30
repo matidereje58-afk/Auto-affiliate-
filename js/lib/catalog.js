@@ -388,3 +388,42 @@ export function findModel(models, id) {
     models.find((m) => m.name.toLowerCase() === target) ??
     null;
 }
+
+/** Flagship-first ordering for an empty search: the models people actually reach for. */
+const FEATURED = [
+  'anthropic/claude-opus-5-5',
+  'openai/gpt-6-astra',
+  'openai/gpt-6.1-sol',
+  'openai/gpt-6-sol',
+  'google/gemini-4-argon',
+  'moonshotai/kimi-k3.1-pro',
+  'minimax/minimax-m3',
+  'minimax/minimax-m3.1-flash',
+  'meta/muse-spark-1.3',
+  'x-ai/grok-5',
+  'deepseek/deepseek-v4.1-flash',
+  'z-ai/glm-5.3',
+];
+
+const VENDOR_RANK = ['Anthropic', 'OpenAI', 'Google', 'Moonshot AI', 'MiniMax', 'Meta', 'xAI', 'Alibaba', 'DeepSeek', 'Z.ai', 'Mistral', 'BytePlus'];
+
+export function sortForDisplay(models) {
+  const featuredIndex = new Map(FEATURED.map((id, index) => [id.toLowerCase(), index]));
+  return [...models].sort((a, b) => {
+    const fa = featuredIndex.get(a.id.toLowerCase());
+    const fb = featuredIndex.get(b.id.toLowerCase());
+    if (fa !== undefined || fb !== undefined) {
+      if (fa === undefined) return 1;
+      if (fb === undefined) return -1;
+      return fa - fb;
+    }
+    const va = VENDOR_RANK.indexOf(a.vendor);
+    const vb = VENDOR_RANK.indexOf(b.vendor);
+    if (va !== vb) {
+      if (va === -1) return 1;
+      if (vb === -1) return -1;
+      return va - vb;
+    }
+    return a.name.localeCompare(b.name, undefined, { numeric: true });
+  });
+}

@@ -203,8 +203,8 @@ export function resolveEffort(model = {}) {
     levels: [],
     defaultLevel: null,
     param: null,
-    source: 'Puter catalogue: no reasoning capability',
-    note: 'No reasoning mode — this model answers directly.',
+    source: 'Puter catalogue: no configurable reasoning effort',
+    note: 'Puter documents no effort control for this model, so none is sent. Use “Test this model” to check it responds.',
   };
 }
 

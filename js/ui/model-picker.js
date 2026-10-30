@@ -1,5 +1,5 @@
 /** Model picker: live catalogue, real effort levels, per-level verification. */
-import { filterModels, formatContext, formatPrice, providerLabel } from '../lib/catalog.js';
+import { filterModels, formatContext, formatPrice, providerLabel, sortForDisplay } from '../lib/catalog.js';
 import { EFFORT_META, describeLevel } from '../lib/effort.js';
 import { el, clear, formatDuration, toast } from './dom.js';
 import { verificationKey } from '../agent/verify.js';
@@ -114,13 +114,14 @@ export class ModelPicker {
   }
 
   filtered() {
-    return filterModels(this.catalog.models ?? [], {
+    const models = filterModels(this.catalog.models ?? [], {
       query: this.query,
       vendor: this.vendor,
       toolsOnly: this.toolsOnly,
       reasoningOnly: this.reasoningOnly,
       freeOnly: this.freeOnly,
     });
+    return this.query ? models : sortForDisplay(models);
   }
 
   renderList() {
