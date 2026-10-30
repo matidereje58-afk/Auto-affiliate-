@@ -181,6 +181,22 @@ export class TurnView {
     }
   }
 
+  /** Live status line while the model has not produced a token yet. */
+  setStatus(text) {
+    if (!this.statusEl) {
+      this.statusEl = el('div', { class: 'agent-status' }, el('span', { class: 'spinner' }), el('span', { class: 'status-text' }));
+      const body = this.node.querySelector('.msg-body');
+      body.insertBefore(this.statusEl, this.thinkingEl);
+    }
+    const label = this.statusEl.querySelector('.status-text');
+    if (text) {
+      label.textContent = text;
+      this.statusEl.hidden = false;
+    } else {
+      this.statusEl.hidden = true;
+    }
+  }
+
   setReasoning(text, replace = false) {
     this.reasoningValue = replace ? text : this.reasoningValue + text;
     if (!this.thinkingBuilt) {
@@ -222,6 +238,7 @@ export class TurnView {
   }
 
   toolStart({ id, name, input }) {
+    this.setStatus('');
     const meta = toolMeta(name);
     const summary = summarizeArgs(name, input);
     const body = el('div', { class: 'tool-body collapsed' });
@@ -286,6 +303,7 @@ export class TurnView {
   }
 
   finalize({ finished = false, steps = 0, usage = null, durationMs = null } = {}) {
+    this.setStatus('');
     if (this.reasoningValue) this.collapseThinking();
     if (usage || durationMs) {
       const meta = this.node.querySelector('.msg-meta');

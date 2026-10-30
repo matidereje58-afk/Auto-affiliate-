@@ -423,11 +423,14 @@ async function runTurn(userText) {
     switch (event.type) {
       case 'step_start':
         inspector.log(`step ${event.step}/${event.maxSteps} → ${state.model.id}${state.level ? ' @ ' + state.level : ''}`, 'meta');
+        view.setStatus(`Step ${event.step}/${event.maxSteps} · waiting for ${state.model.name}${state.level ? ' (' + state.level + ')' : ''}…`);
         break;
       case 'assistant_reasoning':
+        view.setStatus('');
         view.setReasoning(event.text);
         break;
       case 'assistant_text':
+        view.setStatus('');
         view.setText(event.text);
         break;
       case 'step_tool':
