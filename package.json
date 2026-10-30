@@ -1,0 +1,16 @@
+{
+  "name": "workbuddy-ai-coding-agent",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Production-grade AI coding agent built on Puter.js — every real Puter model, real effort levels, streaming thinking traces and a browser-native agent runtime.",
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "node server.mjs",
+    "build:catalog": "node tools/build-catalog.mjs",
+    "test": "node --test tests/"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
