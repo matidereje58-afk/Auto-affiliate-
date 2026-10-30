@@ -140,6 +140,7 @@ const PROVIDER_LABELS = {
   'together-ai': 'Together AI',
   togetherai: 'Together AI',
   moonshotai: 'Moonshot AI',
+  moonshot: 'Moonshot AI',
   kimi: 'Moonshot AI',
   minimax: 'MiniMax',
   deepseek: 'DeepSeek',
@@ -188,6 +189,7 @@ export function vendorOf(modelId, offers = []) {
     const known = {
       openai: 'OpenAI', anthropic: 'Anthropic', google: 'Google', moonshotai: 'Moonshot AI',
       minimax: 'MiniMax', 'x-ai': 'xAI', xai: 'xAI', 'z-ai': 'Z.ai', zai: 'Z.ai',
+      moonshot: 'Moonshot AI', zhipu: 'Z.ai',
       'meta-llama': 'Meta', meta: 'Meta', 'meta-ai': 'Meta', 'meta-models': 'Meta',
       mistralai: 'Mistral', deepseek: 'DeepSeek', bytedance: 'BytePlus', byteplus: 'BytePlus',
       qwen: 'Alibaba', alibaba: 'Alibaba', cohere: 'Cohere', nvidia: 'Nvidia',

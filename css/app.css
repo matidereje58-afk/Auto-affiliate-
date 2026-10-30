@@ -110,7 +110,7 @@ a:hover { text-decoration: underline; }
 .chip.active { color: #cfd5ff; border-color: #4b41a8; background: rgba(124, 92, 255, 0.16); }
 
 .side-section { display: flex; flex-direction: column; gap: 6px; min-height: 0; }
-.side-section.grow { flex: 1; }
+.side-section.grow { flex: 1 1 auto; min-height: 0; }
 .side-label {
   display: flex; align-items: center; gap: 6px;
   font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-faint);
@@ -133,13 +133,13 @@ a:hover { text-decoration: underline; }
 .session .s-del { opacity: 0; font-size: 12px; padding: 0 2px; }
 .session:hover .s-del { opacity: 0.8; }
 
-.file-tree { overflow-y: auto; font-family: var(--mono); font-size: 12px; }
+.file-tree { flex: 1; min-height: 0; overflow-y: auto; font-family: var(--mono); font-size: 12px; }
 .file-row { display: flex; align-items: center; gap: 7px; padding: 4px 8px; border-radius: 7px; color: var(--text-dim); }
 .file-row:hover { background: var(--bg-elev-2); color: var(--text); }
 .file-row .f-size { margin-left: auto; font-size: 10px; color: var(--text-faint); }
 .empty { padding: 10px; color: var(--text-faint); font-size: 12px; }
 
-.side-footer { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line-soft); padding-top: 10px; }
+.side-footer { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line-soft); padding-top: 10px; flex: none; }
 .account { display: flex; align-items: center; gap: 9px; padding: 6px; border-radius: 10px; text-align: left; }
 .account:hover { background: var(--bg-elev-2); }
 .avatar {
@@ -153,9 +153,10 @@ a:hover { text-decoration: underline; }
 .powered:hover { color: var(--accent-2); }
 
 /* -------------------------------------------------------------- main ----- */
-.main { display: flex; flex-direction: column; min-width: 0; background: var(--bg); }
+.main { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; background: var(--bg); }
 
 .topbar {
+  flex: none;
   display: flex; align-items: center; gap: 9px;
   padding: 10px 16px; border-bottom: 1px solid var(--line);
   background: rgba(10, 12, 18, 0.86); backdrop-filter: blur(12px);
@@ -196,7 +197,7 @@ a:hover { text-decoration: underline; }
 .ctx-bar i { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent-3), var(--warn)); transition: width 0.3s ease; }
 
 /* -------------------------------------------------------- transcript ----- */
-.transcript { flex: 1; overflow-y: auto; padding: 22px 8% 12px; scroll-behavior: smooth; }
+.transcript { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 22px 8% 12px; scroll-behavior: smooth; }
 .transcript-inner { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
 
 .hero { text-align: center; padding: 48px 12px 24px; color: var(--text-dim); }
@@ -307,7 +308,7 @@ a:hover { text-decoration: underline; }
 }
 
 /* --------------------------------------------------------- composer ----- */
-.composer { padding: 10px 8% 18px; border-top: 1px solid var(--line-soft); background: linear-gradient(180deg, transparent, rgba(8, 9, 13, 0.9)); }
+.composer { flex: none; padding: 10px 8% 18px; border-top: 1px solid var(--line-soft); background: linear-gradient(180deg, transparent, rgba(8, 9, 13, 0.9)); }
 .composer-inner {
   max-width: 900px; margin: 0 auto; border: 1px solid var(--line); border-radius: 16px;
   background: var(--bg-elev); padding: 10px 12px 8px; box-shadow: 0 -6px 30px rgba(0, 0, 0, 0.25);
@@ -326,7 +327,7 @@ a:hover { text-decoration: underline; }
 .attachment button { color: var(--text-faint); }
 
 /* -------------------------------------------------------- inspector ----- */
-.inspector { display: flex; flex-direction: column; min-width: 0; border-left: 1px solid var(--line); background: var(--bg-elev); }
+.inspector { display: flex; flex-direction: column; min-width: 0; min-height: 0; border-left: 1px solid var(--line); background: var(--bg-elev); }
 .tabs { display: flex; gap: 2px; padding: 8px 8px 0; border-bottom: 1px solid var(--line); overflow-x: auto; }
 .tabs button {
   padding: 7px 11px; font-size: 12px; color: var(--text-dim); border-radius: 9px 9px 0 0;

@@ -232,3 +232,21 @@ export function describeLevel(capability, level) {
   }
   return EFFORT_META[level]?.hint ?? '';
 }
+
+/**
+ * Clamp an effort capability to what a specific model can actually take.
+ * Anthropic requires `max_tokens` to exceed the thinking budget, and older
+ * Claude models only allow 8K-16K of output, so a 64K budget would 400.
+ */
+export function adaptEffortToModel(capability, model) {
+  if (!capability || capability.mode !== 'thinking') return capability;
+  const maxOut = Number(model?.maxTokens) || 8192;
+  const ceiling = Math.max(1024, maxOut - 2048);
+  const budgets = {};
+  for (const [level, value] of Object.entries(capability.budgets ?? THINKING_BUDGETS)) {
+    budgets[level] = level === 'off' ? 0 : Math.min(value, ceiling);
+  }
+  const levels = (capability.levels ?? []).filter((level) => level === 'off' || budgets[level] >= 1024);
+  const defaultLevel = levels.includes(capability.defaultLevel) ? capability.defaultLevel : levels[0] ?? null;
+  return { ...capability, ...(defaultLevel ? { defaultLevel } : {}), levels, budgets };
+}

@@ -118,6 +118,7 @@ export class TurnView {
     this.stepCards = new Map();
     this.userScrolledThinking = false;
     this.thinkingBuilt = false;
+    this.blockText = '';
 
     this.thinkingEl = el('div', { class: 'thinking collapsed' });
     this.flowEl = el('div', { class: 'flow' });
@@ -165,7 +166,7 @@ export class TurnView {
   }
 
   flush() {
-    if (this.textValue && this.currentTextEl) this.currentTextEl.innerHTML = renderMarkdown(this.textValue);
+    if (this.currentTextEl && this.blockText) this.currentTextEl.innerHTML = renderMarkdown(this.blockText);
     if (this.reasoningValue) {
       const body = this.thinkingEl.querySelector('.thinking-body');
       if (body) {
@@ -209,6 +210,7 @@ export class TurnView {
 
   setText(text, replace = false) {
     this.textValue = replace ? text : this.textValue + text;
+    this.blockText = replace ? text : this.blockText + text;
     this.ensureTextBlock();
     this.schedule();
   }
@@ -233,7 +235,10 @@ export class TurnView {
       ),
       body,
     );
+    // Seal the narration block that came before this tool call.
+    if (this.currentTextEl && this.blockText) this.currentTextEl.innerHTML = renderMarkdown(this.blockText);
     this.currentTextEl = null;
+    this.blockText = '';
     this.flowEl.append(card);
     const record = { id, name, input, card, body, status, startedAt: Date.now() };
     this.stepCards.set(id ?? name + this.stepCards.size, record);
@@ -307,6 +312,7 @@ function summarizeArgs(name, input = {}) {
   if (name === 'fetch_url') return input.url ?? '';
   if (name === 'search_files') return input.query ?? '';
   if (name === 'update_plan') return `${input.tasks?.length ?? 0} tasks`;
+  if (name === 'run_file') return input.path ?? '';
   if (name === 'run_javascript' || name === 'run_python') return (input.code ?? '').split('\n')[0].slice(0, 70);
   if (name === 'preview_html') return input.path ?? 'inline html';
   if (name === 'remember') return (input.fact ?? '').slice(0, 60);

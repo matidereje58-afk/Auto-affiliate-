@@ -76,7 +76,7 @@ export async function runAgentTurn({
       }
     }
 
-    const stepText = { text: '', reasoning: '', toolCalls: [] };
+    const stepText = { text: '', reasoning: '', reasoningDetails: [], toolCalls: [] };
     const result = await client.streamChat({
       messages: [{ role: 'system', content: system }, ...messages],
       model: model.id,
@@ -95,6 +95,8 @@ export async function runAgentTurn({
         } else if (event.type === 'reasoning') {
           stepText.reasoning += event.text;
           onEvent({ type: 'assistant_reasoning', text: event.text, step: steps });
+        } else if (event.type === 'reasoning_detail' && event.detail) {
+          stepText.reasoningDetails.push(event.detail);
         } else if (event.type === 'tool_use') {
           stepText.toolCalls.push({ id: event.id, name: event.name, input: event.input });
         } else if (event.type === 'usage') {
@@ -137,6 +139,8 @@ export async function runAgentTurn({
         type: 'function',
         function: { name: call.name, arguments: JSON.stringify(call.input ?? {}) },
       })),
+      // Anthropic will reject a continued thinking turn without its signed blocks.
+      ...(stepText.reasoningDetails.length ? { reasoning_details: stepText.reasoningDetails } : {}),
     });
 
     for (const call of calls) {

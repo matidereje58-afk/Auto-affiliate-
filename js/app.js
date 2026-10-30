@@ -7,7 +7,7 @@
 import { puterClient } from './puter-client.js';
 import { store } from './store.js';
 import { buildCatalog, mergeLive, findModel, formatContext } from './lib/catalog.js';
-import { EFFORT_META, describeLevel } from './lib/effort.js';
+import { EFFORT_META, describeLevel, adaptEffortToModel } from './lib/effort.js';
 import { estimateConversationTokens, contextUsage, formatTokens } from './lib/tokens.js';
 import { Transcript } from './ui/transcript.js';
 import { Inspector } from './ui/inspector.js';
@@ -151,6 +151,8 @@ function restoreSelection() {
 
 function selectModel(model, level, { silent = false } = {}) {
   if (!model) return;
+  // Clamp thinking budgets to what this specific model can emit.
+  model.effort = adaptEffortToModel(model.effort, model);
   state.model = model;
   const levels = model.effort?.levels ?? [];
   state.level = levels.length ? (levels.includes(level) ? level : model.effort.defaultLevel ?? levels[0]) : null;

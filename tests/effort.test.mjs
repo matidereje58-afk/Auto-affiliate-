@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { resolveEffort, effortOptions, EFFORT_LEVELS, describeLevel } from '../js/lib/effort.js';
+import { resolveEffort, effortOptions, EFFORT_LEVELS, describeLevel, adaptEffortToModel } from '../js/lib/effort.js';
 
 test('OpenAI reasoning models expose the full effort ladder', () => {
   const model = { id: 'openai/gpt-6-astra', provider: 'openai-completion' };
@@ -51,4 +51,14 @@ test('routing prefixes and variant suffixes do not change the rules', () => {
   const effort = resolveEffort({ id: 'infron:openai/gpt-6-astra:flex' });
   assert.equal(effort.mode, 'reasoning_effort');
   assert.equal(effort.levels.includes('max'), true);
+});
+
+test('thinking budgets are clamped to the model output limit', () => {
+  const model = { id: 'anthropic/claude-haiku-4-5-20251001', provider: 'claude', maxTokens: 8192 };
+  const effort = adaptEffortToModel(resolveEffort(model), model);
+  assert.equal(effort.budgets.max, 6144);
+  assert.equal(effort.defaultLevel, 'off');
+  assert.equal(effort.levels.includes('max'), true);
+  const roomy = adaptEffortToModel(resolveEffort({ id: 'anthropic/claude-opus-5-5', provider: 'claude' }), { maxTokens: 128000 });
+  assert.equal(roomy.budgets.max, 64000);
 });

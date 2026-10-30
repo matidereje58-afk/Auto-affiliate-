@@ -115,7 +115,7 @@ export class PuterClient extends EventTarget {
     await this.ready();
     const options = this.buildOptions({ model, effort, level, tools, maxTokens, temperature, provider, webSearch });
     const started = Date.now();
-    const result = { text: '', reasoning: '', toolCalls: [], usage: null, finishReason: null, model, level };
+    const result = { text: '', reasoning: '', reasoningDetails: [], toolCalls: [], usage: null, finishReason: null, model, level };
     let streamed = false;
 
     const consume = async (response) => {
@@ -149,6 +149,7 @@ export class PuterClient extends EventTarget {
       type: 'done',
       text: result.text,
       reasoning: result.reasoning,
+      reasoningDetails: result.reasoningDetails,
       toolCalls: result.toolCalls,
       usage: result.usage,
       durationMs: result.durationMs,
@@ -197,6 +198,7 @@ export class PuterClient extends EventTarget {
         onEvent({ type: 'reasoning_start', format: chunk.format });
         break;
       case 'reasoning_detail':
+        if (chunk.detail) result.reasoningDetails.push(chunk.detail);
         onEvent({ type: 'reasoning_detail', detail: chunk.detail });
         break;
       case 'tool_use':
@@ -295,6 +297,7 @@ export class PuterClient extends EventTarget {
       type: 'done',
       text: result.text,
       reasoning: result.reasoning,
+      reasoningDetails: result.reasoningDetails,
       toolCalls: result.toolCalls,
       usage: result.usage,
     });
