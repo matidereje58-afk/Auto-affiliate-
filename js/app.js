@@ -25,6 +25,7 @@ const state = {
   abort: null,
   usage: { input: 0, output: 0, cost: 0 },
   attachments: [],
+  provider: null,
 };
 
 const dom = {
@@ -69,6 +70,10 @@ const picker = new ModelPicker({
   getVerification: (key) => store.getVerification(key),
   onSelect: (model, level) => selectModel(model, level),
   onVerify: (model, effort) => verifyModel(model, effort),
+  onPinProvider: (model, provider) => {
+    state.provider = provider;
+    toast(provider ? `Pinned to ${provider}` : 'Provider routing set to automatic');
+  },
 });
 
 // ---------------------------------------------------------------- boot ----
@@ -80,6 +85,12 @@ async function boot() {
   transcript.renderAll(store.project.messages);
   bindUi();
   syncSettingsUi();
+  inspector.__onRestore = (id) => {
+    if (store.restoreCheckpoint(id)) {
+      renderFiles();
+      toast('Checkpoint restored', 'ok');
+    }
+  };
 
   try {
     dom.modelName.textContent = 'Connecting to Puter…';
@@ -143,6 +154,7 @@ function selectModel(model, level, { silent = false } = {}) {
   state.model = model;
   const levels = model.effort?.levels ?? [];
   state.level = levels.length ? (levels.includes(level) ? level : model.effort.defaultLevel ?? levels[0]) : null;
+  state.provider = null;
   store.project.modelId = model.id;
   store.project.level = state.level;
   store.updateSettings({ modelId: model.id, level: state.level });
@@ -191,7 +203,7 @@ function renderEffortChips() {
         class: classes.join(' '),
         title: `${describeLevel(effort, level) || EFFORT_META[level]?.hint || level}${record ? (record.ok ? ` — verified in ${record.ms}ms` : ` — failed: ${record.error}`) : ' — not tested yet'}`,
         onclick: () => setLevel(level),
-      }, EFFORT_META[level]?.label ?? level),
+      }, levelLabel(level)),
     );
   }
   dom.effortChips.append(
@@ -201,6 +213,11 @@ function renderEffortChips() {
       onclick: () => verifyModel(state.model, state.model.effort),
     }, 'verify'),
   );
+}
+
+function levelLabel(level) {
+  if (EFFORT_META[level]?.label) return EFFORT_META[level].label;
+  return String(level).charAt(0).toUpperCase() + String(level).slice(1);
 }
 
 function setLevel(level) {
@@ -230,6 +247,7 @@ async function verifyModel(model, effort) {
     model,
     effort,
     levels,
+    provider: state.provider,
     signal: controller.signal,
     onProgress: ({ status, level, outcome }) => {
       if (status === 'finished') {
@@ -320,7 +338,7 @@ function renderFiles() {
       );
     }
   }
-  inspector.renderFiles(files);
+  inspector.renderFiles(files, null, store.project.checkpoints ?? []);
 }
 
 function renderAttachments() {
@@ -368,6 +386,7 @@ async function handleSend() {
       .join('');
     content += fileBlocks;
   }
+  if (transcript.inner.querySelector('.hero')) transcript.inner.replaceChildren();
   transcript.inner.append(transcript.userBubble({ content, createdAt: Date.now() }));
   transcript.scrollToBottom(true);
   await runTurn(content);
@@ -383,7 +402,7 @@ async function runTurn(userText) {
   history.push({ role: 'user', content: userText });
 
   const view = transcript.beginTurn({
-    modelName: `${state.model.name}${state.level ? ' · ' + state.level : ''}`,
+    modelName: state.model.name,
     level: state.level,
   });
   currentView = view;
@@ -453,6 +472,7 @@ async function runTurn(userText) {
     temperature: store.settings.temperature,
     webSearch: store.settings.webSearch,
     compaction: store.settings.compaction,
+    provider: state.provider,
     onEvent: emit,
   });
 
@@ -484,6 +504,7 @@ async function runTurn(userText) {
       temperature: store.settings.temperature,
       webSearch: store.settings.webSearch,
       compaction: store.settings.compaction,
+      provider: state.provider,
       onEvent: emit,
     });
   }

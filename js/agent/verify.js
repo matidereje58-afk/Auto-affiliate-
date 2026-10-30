@@ -13,7 +13,7 @@ export function verificationKey(modelId, level) {
  * Call the model once with a tiny prompt.
  * @returns {Promise<{ok:boolean, ms:number, error:string|null, reasoningChars:number, text:string}>}
  */
-export async function probeModel({ client, model, effort = null, level = null, signal = null }) {
+export async function probeModel({ client, model, effort = null, level = null, signal = null, provider = null }) {
   const started = performance.now();
   try {
     const result = await client.streamChat({
@@ -25,6 +25,7 @@ export async function probeModel({ client, model, effort = null, level = null, s
       effort,
       level,
       maxTokens: 64,
+      provider,
       signal,
       onEvent: () => {},
     });
@@ -52,13 +53,13 @@ export async function probeModel({ client, model, effort = null, level = null, s
  * Probe every level a model claims to support, sequentially (rate-limit friendly).
  * Results are persisted through `store.setVerification`.
  */
-export async function verifyEffortLevels({ client, store, model, effort, levels, signal = null, onProgress = () => {} }) {
+export async function verifyEffortLevels({ client, store, model, effort, levels, signal = null, provider = null, onProgress = () => {} }) {
   const results = {};
   const list = levels?.length ? levels : [null];
   for (const level of list) {
     if (signal?.aborted) break;
     onProgress({ status: 'started', level });
-    const outcome = await probeModel({ client, model, effort, level, signal });
+    const outcome = await probeModel({ client, model, effort, level, signal, provider });
     const key = verificationKey(model.id, level);
     store.setVerification(key, outcome);
     results[level ?? 'default'] = outcome;

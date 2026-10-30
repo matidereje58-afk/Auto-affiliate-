@@ -49,6 +49,7 @@ export async function runAgentTurn({
   temperature = null,
   webSearch = false,
   compaction = true,
+  provider = null,
   onEvent = () => {},
 }) {
   const messages = [...history];
@@ -66,7 +67,7 @@ export async function runAgentTurn({
     onEvent({ type: 'step_start', step: steps, maxSteps });
 
     if (compaction && !compacted && estimateConversationTokens(messages) > 90000 && messages.length > 8) {
-      const result = await compactHistory({ client, model, messages, effort, level });
+      const result = await compactHistory({ client, model, messages, effort, level, provider });
       if (result) {
         messages.length = 0;
         messages.push(...result);
@@ -85,6 +86,7 @@ export async function runAgentTurn({
       maxTokens: null,
       temperature,
       webSearch,
+      provider,
       signal,
       onEvent: (event) => {
         if (event.type === 'text') {
@@ -160,7 +162,7 @@ export async function runAgentTurn({
 }
 
 /** Replace the oldest half of the conversation with one dense summary message. */
-async function compactHistory({ client, model, messages, effort, level }) {
+async function compactHistory({ client, model, messages, effort, level, provider = null }) {
   const keep = 6;
   if (messages.length <= keep) return null;
   const older = messages.slice(0, messages.length - keep);
@@ -176,6 +178,7 @@ async function compactHistory({ client, model, messages, effort, level }) {
       effort,
       level: 'none',
       maxTokens: 900,
+      provider,
     });
     const text = String(summary.text ?? '').trim();
     if (!text) return null;

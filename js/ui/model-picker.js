@@ -5,12 +5,13 @@ import { el, clear, formatDuration, toast } from './dom.js';
 import { verificationKey } from '../agent/verify.js';
 
 export class ModelPicker {
-  constructor({ getCatalog, getSelected, getVerification, onSelect, onVerify }) {
+  constructor({ getCatalog, getSelected, getVerification, onSelect, onVerify, onPinProvider }) {
     this.getCatalog = getCatalog;
     this.getSelected = getSelected;
     this.getVerification = getVerification;
     this.onSelect = onSelect;
     this.onVerify = onVerify;
+    this.onPinProvider = onPinProvider;
 
     this.modal = document.getElementById('model-modal');
     this.listEl = document.getElementById('model-list');
@@ -173,7 +174,7 @@ export class ModelPicker {
     const isCurrent = selected?.model?.id === model.id;
     const effort = model.effort ?? { mode: 'none', levels: [], note: 'No reasoning mode.' };
 
-    this.detailEl.append(
+    this.detailEl.append(...[
       el('div', {}, el('h3', { text: model.name }), el('div', { class: 'sub', text: model.id })),
       el('div', { class: 'pill-row' },
         el('span', { class: 'pill', text: model.vendor }),
@@ -191,7 +192,18 @@ export class ModelPicker {
         model.releaseDate ? el('dd', { text: model.releaseDate }) : null,
       ),
       model.description ? el('div', { class: 'desc', text: model.description }) : null,
-    );
+    ].filter(Boolean));
+
+    // ---- provider pin (only useful for resold models) ----
+    if ((model.providers ?? []).length > 1) {
+      const select = el('select', {
+        style: 'width:100%;padding:7px 9px;border-radius:9px;border:1px solid var(--line);background:var(--bg-elev-2);font-size:12px',
+        onchange: (event) => this.onPinProvider?.(model, event.target.value || null),
+      });
+      select.append(el('option', { value: '' }, 'Routing: automatic (Puter picks)'));
+      for (const provider of model.providers) select.append(el('option', { value: provider }, 'Pin to ' + providerLabel(provider)));
+      this.detailEl.append(el('div', {}, el('div', { class: 'section-title', text: 'Provider' }), select));
+    }
 
     // ---- effort levels, with live verification state ----
     const effortSection = el('div', {}, el('div', { class: 'section-title', text: 'Reasoning effort' }));

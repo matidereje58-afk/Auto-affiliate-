@@ -1,6 +1,7 @@
 /** Right-hand inspector: plan, files, live preview, console, model card. */
 import { el, clear, formatBytes, formatDuration } from './dom.js';
 import { formatContext, formatPrice } from '../lib/catalog.js';
+import { createRunner, formatRunOutput } from '../agent/sandbox.js';
 import { verificationKey } from '../agent/verify.js';
 
 export class Inspector {
@@ -56,7 +57,7 @@ export class Inspector {
   }
 
   // ------------------------------------------------------------ files ----
-  renderFiles(files = {}, onOpen = null) {
+  renderFiles(files = {}, onOpen = null, checkpoints = []) {
     clear(this.filesEl);
     const paths = Object.keys(files).sort();
     if (!paths.length) {
@@ -72,13 +73,51 @@ export class Inspector {
         onclick: () => {
           if (this.expandedFiles.has(path)) this.expandedFiles.delete(path);
           else this.expandedFiles.add(path);
-          this.renderFiles(files);
+          this.renderFiles(files, onOpen, checkpoints);
           onOpen?.(path);
         },
       }, el('span', { text: expanded ? '▾' : '▸' }), el('span', { text: path }), el('span', { class: 'badge', text: formatBytes(content.length) }));
+      const actions = el('span', { class: 'file-actions', style: 'display:flex;gap:4px' });
+      if (/\.html?$/i.test(path)) {
+        actions.append(el('button', {
+          class: 'chip',
+          title: 'Render this file in the preview panel',
+          onclick: (event) => { event.stopPropagation(); this.setPreview(content, path); },
+        }, '▶ preview'));
+      }
+      if (/\.(m?js)$/i.test(path)) {
+        actions.append(el('button', {
+          class: 'chip',
+          title: 'Execute this file in the sandbox (8s limit)',
+          onclick: async (event) => {
+            event.stopPropagation();
+            const runner = createRunner({ timeoutMs: 8000 });
+            this.log('run ' + path, 'meta');
+            const result = await runner.run(content);
+            this.log(formatRunOutput(result), result.ok ? 'ok' : 'err');
+            this.openTab('console');
+          },
+        }, '▶ run'));
+      }
+      if (actions.childElementCount) header.append(actions);
       card.append(header);
       if (expanded) card.append(el('pre', { text: content.slice(0, 20000) }));
       this.filesEl.append(card);
+    }
+    if (checkpoints.length) {
+      this.filesEl.append(el('div', { class: 'section-title', text: 'CHECKPOINTS (rollback)' }));
+      for (const point of checkpoints.slice(0, 6)) {
+        this.filesEl.append(
+          el('div', { class: 'effort-row' },
+            el('span', { class: 'lvl', style: 'width:auto', text: new Date(point.createdAt).toLocaleTimeString() }),
+            el('span', { class: 'hint-text', text: `${Object.keys(point.files ?? {}).length} files · ${point.label}` }),
+            el('button', {
+              class: 'chip',
+              onclick: () => this.__onRestore?.(point.id),
+            }, 'restore'),
+          ),
+        );
+      }
     }
   }
 

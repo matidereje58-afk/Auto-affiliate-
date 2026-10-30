@@ -436,3 +436,14 @@ a:hover { text-decoration: underline; }
   .modal-body { grid-template-columns: minmax(0, 1fr); }
   .model-detail, .model-filters { display: none; }
 }
+
+/* narration + tool cards, in arrival order */
+.flow { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.flow > .msg-content { margin: 0; }
+.flow .tool-card + .msg-content { margin-top: 2px; }
+.muted { color: var(--text-faint); }
+.tool-foot { font-size: 10.5px; color: var(--text-faint); padding-top: 4px; }
+.tool-foot .ok { color: #86efac; }
+.tool-foot .del { color: #fca5a5; }
+.file-card header .file-actions .chip { font-size: 10px; padding: 2px 7px; }
+.file-card header { flex-wrap: wrap; }

@@ -2,6 +2,7 @@
 import { renderMarkdown } from '../lib/markdown.js';
 import { renderDiff } from '../lib/diff.js';
 import { el, clear, formatDuration, copyText, toast } from './dom.js';
+import { formatCost } from '../lib/tokens.js';
 import { toolMeta } from '../agent/tools.js';
 
 const SUGGESTIONS = [
@@ -84,7 +85,7 @@ export class Transcript {
 
   userBubble(message) {
     return el('div', { class: 'msg user' },
-      el('div', { class: 'avatar-badge', text: 'You' }),
+      el('div', { class: 'avatar-badge', text: 'Y' }),
       el('div', { class: 'msg-body' },
         el('div', { class: 'msg-meta' }, el('span', { text: 'You' }), el('span', { class: 'pill', text: new Date(message.createdAt ?? Date.now()).toLocaleTimeString() })),
         el('div', { class: 'msg-content', html: renderMarkdown(message.content ?? '') }),
@@ -116,11 +117,12 @@ export class TurnView {
     this.steps = [];
     this.stepCards = new Map();
     this.userScrolledThinking = false;
+    this.thinkingBuilt = false;
 
-    this.textEl = el('div', { class: 'msg-content' });
     this.thinkingEl = el('div', { class: 'thinking collapsed' });
-    this.stepsEl = el('div', { class: 'steps' });
+    this.flowEl = el('div', { class: 'flow' });
     this.bannerEl = el('div');
+    this.currentTextEl = null;
 
     this.node = el('div', { class: 'msg assistant' },
       el('div', { class: 'avatar-badge', text: '✦' }),
@@ -131,8 +133,7 @@ export class TurnView {
           el('span', { class: 'pill', text: new Date(createdAt).toLocaleTimeString() }),
         ),
         this.thinkingEl,
-        this.stepsEl,
-        this.textEl,
+        this.flowEl,
         this.bannerEl,
       ),
     );
@@ -154,8 +155,17 @@ export class TurnView {
     });
   }
 
+  /** A new narration block starts after every tool call. */
+  ensureTextBlock() {
+    if (!this.currentTextEl) {
+      this.currentTextEl = el('div', { class: 'msg-content' });
+      this.flowEl.append(this.currentTextEl);
+    }
+    return this.currentTextEl;
+  }
+
   flush() {
-    if (this.textValue) this.textEl.innerHTML = renderMarkdown(this.textValue);
+    if (this.textValue && this.currentTextEl) this.currentTextEl.innerHTML = renderMarkdown(this.textValue);
     if (this.reasoningValue) {
       const body = this.thinkingEl.querySelector('.thinking-body');
       if (body) {
@@ -172,7 +182,7 @@ export class TurnView {
 
   setReasoning(text, replace = false) {
     this.reasoningValue = replace ? text : this.reasoningValue + text;
-    if (!this.thinkingEl.isConnected) {
+    if (!this.thinkingBuilt) {
       const body = el('div', { class: 'thinking-body', text: this.reasoningValue });
       body.addEventListener('scroll', () => {
         this.userScrolledThinking = body.scrollHeight - body.scrollTop - body.clientHeight > 40;
@@ -189,6 +199,7 @@ export class TurnView {
         body,
       );
       this.thinkingEl.classList.remove('collapsed');
+      this.thinkingBuilt = true;
     } else {
       const body = this.thinkingEl.querySelector('.thinking-body');
       body.textContent = this.reasoningValue;
@@ -198,6 +209,7 @@ export class TurnView {
 
   setText(text, replace = false) {
     this.textValue = replace ? text : this.textValue + text;
+    this.ensureTextBlock();
     this.schedule();
   }
 
@@ -221,7 +233,8 @@ export class TurnView {
       ),
       body,
     );
-    this.stepsEl.append(card);
+    this.currentTextEl = null;
+    this.flowEl.append(card);
     const record = { id, name, input, card, body, status, startedAt: Date.now() };
     this.stepCards.set(id ?? name + this.stepCards.size, record);
     this.lastStep = record;
@@ -237,7 +250,8 @@ export class TurnView {
     if (!ok) record.card.classList.add('failed');
     record.status.replaceChildren(el('span', { class: 'dot' }), el('span', { text: ok ? formatDuration(ms ?? Date.now() - record.startedAt) : 'failed' }));
     record.body.innerHTML = renderToolResult(name, summary, ui);
-    record.body.classList.remove('collapsed');
+    const keepOpen = ['write_file', 'edit_file', 'run_javascript', 'run_python', 'preview_html', 'finish', 'ask_user'];
+    record.body.classList.toggle('collapsed', !keepOpen.includes(name));
     const step = this.steps[this.steps.length - 1];
     if (step) Object.assign(step, { status: ok ? 'done' : 'failed', summary, ms, ui });
     this.lastStep = null;
@@ -254,7 +268,7 @@ export class TurnView {
       el('div', { class: 'completion-banner' },
         el('span', { text: '✅' }),
         el('span', { text: summary || 'Task finished.' }),
-        files.length ? el('span', { class: 'pill', text: files.length + ' files' }) : null,
+        files.length ? el('span', { class: 'pill', text: `${files.length} file${files.length === 1 ? '' : 's'}` }) : null,
       ),
     );
   }
@@ -273,7 +287,7 @@ export class TurnView {
       if (meta) {
         const bits = [];
         if (usage?.input || usage?.output) bits.push(`${(usage.input ?? 0).toLocaleString()} in / ${(usage.output ?? 0).toLocaleString()} out`);
-        if (usage?.cost) bits.push(`$${usage.cost.toFixed(4)}`);
+        if (usage?.cost) bits.push(formatCost(usage.cost));
         const ms = durationMs ?? Date.now() - this.startTime;
         if (ms) bits.push(formatDuration(ms));
         if (steps) bits.push(`${steps} step${steps === 1 ? '' : 's'}`);
@@ -281,7 +295,7 @@ export class TurnView {
       }
     }
     if (!this.textValue && !this.reasoningValue && !this.steps.length && finished) {
-      this.textEl.innerHTML = '<p class="muted">(no output)</p>';
+      this.ensureTextBlock().innerHTML = '<p class="muted">(no output)</p>';
     }
     this.flush();
   }

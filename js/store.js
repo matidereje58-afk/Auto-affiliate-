@@ -141,7 +141,7 @@ export class Store extends EventTarget {
     }
     project.updatedAt = Date.now();
     this.emit('message');
-    this.save();
+    void this.flush();
   }
 
   updateMessage(id, patch) {
@@ -156,8 +156,9 @@ export class Store extends EventTarget {
 
   clearMessages() {
     this.project.messages = [];
+    this.project.history = [];
     this.emit('message');
-    this.save();
+    void this.flush();
   }
 
   // -------------------------------------------------------------- files ----

@@ -74,6 +74,14 @@ export function estimateCost(inputTokens, outputTokens, inputPrice, outputPrice)
   return ((inputTokens * (inputPrice ?? 0)) + (outputTokens * (outputPrice ?? 0))) / 1_000_000;
 }
 
+export function formatCost(value) {
+  const n = Number(value) || 0;
+  if (!n) return '$0';
+  if (n < 0.01) return '$' + n.toFixed(4);
+  if (n < 1) return '$' + n.toFixed(3);
+  return '$' + n.toFixed(2);
+}
+
 export function formatTokens(value) {
   const n = Number(value) || 0;
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
