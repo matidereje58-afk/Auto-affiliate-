@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WorkBuddy — AI coding agent on Puter.js</title>
+  <meta name="description" content="Production-grade AI coding agent built on Puter.js: every real Puter model, verified reasoning-effort levels, streaming thinking traces and a browser-native agent runtime." />
+  <link rel="stylesheet" href="./css/app.css" />
+  <script src="https://js.puter.com/v2/"></script>
+</head>
+<body>
+  <div class="app" id="app">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark">W</div>
+        <div class="brand-text">
+          <strong>WorkBuddy</strong>
+          <span>agentic IDE</span>
+        </div>
+        <button class="icon-btn" id="collapse-sidebar" title="Toggle sidebar">⟨</button>
+      </div>
+
+      <button class="btn primary block" id="new-chat">＋ New session</button>
+
+      <div class="side-section">
+        <div class="side-label">Sessions</div>
+        <div class="session-list" id="session-list"></div>
+      </div>
+
+      <div class="side-section grow">
+        <div class="side-label">Workspace <span class="count" id="file-count">0</span></div>
+        <div class="file-tree" id="file-tree"></div>
+      </div>
+
+      <div class="side-footer">
+        <button class="account" id="account-btn">
+          <span class="avatar" id="account-avatar">?</span>
+          <span class="account-text"><strong id="account-name">Guest</strong><small id="account-sub">sign in for cloud saves</small></span>
+        </button>
+        <a class="powered" href="https://developer.puter.com" target="_blank" rel="noopener">Powered by Puter</a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="model-btn" id="model-btn" aria-haspopup="dialog">
+          <span class="model-dot" id="model-dot"></span>
+          <span class="model-name" id="model-name">Loading models…</span>
+          <span class="model-vendor" id="model-vendor"></span>
+          <span class="chev">▾</span>
+        </button>
+        <div class="effort-chips" id="effort-chips" title="Reasoning effort — only levels this model really accepts"></div>
+        <div class="topbar-spacer"></div>
+        <div class="segmented" id="mode-toggle">
+          <button data-mode="agent" class="active">Agent</button>
+          <button data-mode="chat">Chat</button>
+        </div>
+        <div class="ctx-meter" id="ctx-meter" title="Context used"><div class="ctx-bar"><i></i></div><span id="ctx-label">0%</span></div>
+        <button class="icon-btn" id="toggle-inspector" title="Toggle inspector">▥</button>
+      </header>
+
+      <section class="transcript" id="transcript" aria-live="polite"></section>
+
+      <section class="composer">
+        <div class="composer-inner">
+          <div class="attachments" id="attachments"></div>
+          <textarea id="prompt" rows="1" placeholder="Ask WorkBuddy to build, fix or explain something…  (⏎ to send, ⇧⏎ for newline, / for commands)"></textarea>
+          <div class="composer-row">
+            <div class="composer-left">
+              <button class="chip" id="attach-btn" title="Attach a file">📎 Attach</button>
+              <button class="chip" id="websearch-btn" title="Let the provider search the web (OpenAI models)">🌐 Web</button>
+              <button class="chip" id="autocontinue-btn" title="Keep working until the task is finished">∞ Auto</button>
+            </div>
+            <div class="composer-right">
+              <span class="hint" id="composer-hint"></span>
+              <button class="btn ghost" id="stop-btn" hidden>■ Stop</button>
+              <button class="btn primary" id="send-btn">Send ⏎</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <aside class="inspector" id="inspector">
+      <div class="tabs" id="inspector-tabs">
+        <button data-tab="plan" class="active">Plan</button>
+        <button data-tab="files">Files</button>
+        <button data-tab="preview">Preview</button>
+        <button data-tab="console">Console</button>
+        <button data-tab="model">Model</button>
+      </div>
+      <div class="tab-panel active" data-panel="plan" id="panel-plan"></div>
+      <div class="tab-panel" data-panel="files" id="panel-files"></div>
+      <div class="tab-panel" data-panel="preview" id="panel-preview">
+        <div class="preview-toolbar"><span id="preview-path">No preview yet</span><button class="chip" id="preview-refresh">↻ Reload</button></div>
+        <iframe id="preview-frame" title="Live preview" sandbox="allow-scripts allow-forms allow-modals allow-popups"></iframe>
+      </div>
+      <div class="tab-panel" data-panel="console" id="panel-console"></div>
+      <div class="tab-panel" data-panel="model" id="panel-model"></div>
+    </aside>
+  </div>
+
+  <div class="modal" id="model-modal" role="dialog" aria-modal="true" aria-label="Choose a model">
+    <div class="modal-card">
+      <header class="modal-head">
+        <div>
+          <h2>Models</h2>
+          <p id="model-modal-sub">Loading the live catalogue from Puter…</p>
+        </div>
+        <div class="modal-head-actions">
+          <button class="chip" id="refresh-models" title="Refetch puter.ai.listModels()">↻ Refresh</button>
+          <button class="icon-btn" id="close-modal">✕</button>
+        </div>
+      </header>
+      <div class="modal-body">
+        <aside class="model-filters">
+          <input type="search" id="model-search" placeholder="Search 600+ models…" autocomplete="off" />
+          <div class="filter-group" id="vendor-filters"></div>
+          <label class="switch"><input type="checkbox" id="filter-tools" /> Tool calling only</label>
+          <label class="switch"><input type="checkbox" id="filter-reasoning" /> Reasoning models</label>
+          <label class="switch"><input type="checkbox" id="filter-free" /> Free variants</label>
+        </aside>
+        <div class="model-list" id="model-list"></div>
+        <aside class="model-detail" id="model-detail"></aside>
+      </div>
+    </div>
+  </div>
+
+  <div class="toasts" id="toasts"></div>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

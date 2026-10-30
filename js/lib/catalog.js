@@ -310,40 +310,38 @@ export function mergeLive(liveEntries = [], bundled = { models: [] }) {
   const bundledByKey = new Map();
   for (const model of bundled.models ?? []) {
     bundledByKey.set(String(model.key), model);
+    bundledByKey.set(String(model.id).toLowerCase(), model);
+    bundledByKey.set(bareModelName(model.id), model);
   }
-  const liveKeys = new Set();
-  const extra = [];
+  const matched = new Map();
+  const unknown = [];
   for (const entry of liveEntries) {
     const offer = normalizeEntry(entry);
     if (!offer) continue;
-    liveKeys.add(String(offer.modelId).toLowerCase());
-    extra.push(entry);
+    const keys = [String(offer.modelId).toLowerCase(), bareModelName(offer.modelId)];
+    const hit = keys.map((key) => bundledByKey.get(key)).find(Boolean);
+    if (hit) matched.set(hit.key, hit);
+    else unknown.push(entry);
   }
-  if (!liveKeys.size) {
+  if (!matched.size && !unknown.length) {
     return { ...bundled, live: false, models: bundled.models ?? [] };
   }
-  const models = [];
-  for (const key of liveKeys) {
-    if (bundledByKey.has(key)) models.push(bundledByKey.get(key));
-  }
-  // Live-only models (newly added by Puter since the snapshot was built).
-  const unknown = extra.filter((e) => {
-    const offer = normalizeEntry(e);
-    return offer && !bundledByKey.has(String(offer.modelId).toLowerCase());
-  });
+  const models = [...matched.values()];
   if (unknown.length) {
     const fresh = buildCatalog(unknown, { generatedAt: bundled.generatedAt });
     const seen = new Set(models.map((m) => m.key));
     for (const model of fresh.models) {
-      if (!seen.has(model.key)) models.push(model);
+      if (!seen.has(model.key) && !models.some((m) => bareModelName(m.id) === bareModelName(model.id))) {
+        models.push(model);
+      }
     }
   }
   models.sort(compareModels);
   return {
     ...bundled,
     live: true,
-    liveCount: liveKeys.size,
-    liveOnly: unknown.length,
+    liveCount: matched.size + unknown.length,
+    liveOnly: models.filter((m) => !matched.has(m.key)).length,
     models,
   };
 }

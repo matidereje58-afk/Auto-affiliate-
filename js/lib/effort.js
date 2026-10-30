@@ -64,9 +64,10 @@ export function bareModelName(id) {
 function isOpenAiReasoningFamily(model) {
   const provider = lc(model.provider);
   const name = bareModelName(model.id);
+  const norm = normalizeModelId(model.id);
   // gpt-4 / gpt-3.5 / chat-latest are plain completion models: no reasoning knob.
   if (/^(gpt-4|gpt-3|chat-latest)/.test(name) && !/gpt-5|gpt-6/.test(name)) return false;
-  const openAiProvider = /openai|azure/i.test(provider);
+  const openAiProvider = /openai|azure/.test(provider) || norm.startsWith('openai/');
   const reasoningShape = /^(gpt-5|gpt-6|o[1-9])/.test(name) || /codex/.test(name);
   return openAiProvider && reasoningShape;
 }
