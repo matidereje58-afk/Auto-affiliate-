@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Cline - AI Coding Agent</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <div class="brand">Cline</div>
+    <div class="auth" id="auth">
+      <input type="password" id="apiKey" placeholder="API Key (you auth)">
+      <select id="provider"><option value="openai">OpenAI</option><option value="anthropic">Anthropic</option></select>
+      <button id="btnAuth">Connect</button>
+      <span id="authStatus" class="status"></span>
+    </div>
+  </header>
+
+  <div class="main">
+    <aside class="sidebar">
+      <div class="panel-title">Linux Controls</div>
+      <div class="keyboard">
+        <div class="row"><button class="key" data-key="Ctrl">Ctrl</button><button class="key" data-key="Alt">Alt</button><button class="key" data-key="Shift">Shift</button></div>
+        <div class="row"><button class="key" data-key="Tab">Tab</button><button class="key" data-key="Esc">Esc</button><button class="key" data-key="Enter">Enter</button></div>
+        <div class="row arrows"><button class="key" data-key="ArrowUp">&#9650;</button></div>
+        <div class="row arrows"><button class="key" data-key="ArrowLeft">&#9664;</button><button class="key" data-key="ArrowDown">&#9660;</button><button class="key" data-key="ArrowRight">&#9654;</button></div>
+        <div class="row"><button class="key" data-key="Backspace">Backspace</button><button class="key" data-key="Delete">Delete</button><button class="key" data-key="Space">Space</button></div>
+      </div>
+      <div class="panel-title">Session</div>
+      <div class="session-info" id="sessionInfo">Not connected</div>
+    </aside>
+
+    <section class="chat">
+      <div class="messages" id="messages"></div>
+      <form id="chatForm" class="composer">
+        <input type="text" id="input" placeholder="Ask Cline..." autocomplete="off">
+        <button type="submit" id="btnSend">Send</button>
+      </form>
+    </section>
+  </div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
